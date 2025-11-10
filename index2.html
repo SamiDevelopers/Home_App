@@ -1,0 +1,3097 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة العقار المتقدم</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid #5a67d8;
+    }
+    
+    td {
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f7fafc;
+    }
+    
+    tr:hover {
+      background-color: #edf2f7;
+    }
+    
+    .owner-badge {
+      background-color: #48bb78;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .tenant-badge {
+      background-color: #4299e1;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .paid-badge {
+      background-color: #48bb78;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .unpaid-badge {
+      background-color: #f56565;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .partial-badge {
+      background-color: #ed8936;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .backup-section {
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .backup-section input[type="file"] {
+      display: none;
+    }
+
+    .backup-section label {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-block;
+      margin: 5px;
+    }
+
+    .backup-section label:hover {
+      background: #0056b3;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .action-buttons button {
+      width: 100%;
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+
+    optgroup {
+      font-weight: bold;
+      color: #4a5568;
+      background-color: #f7fafc;
+    }
+
+    optgroup option {
+      font-weight: normal;
+      color: #2d3748;
+      background-color: white;
+      padding-left: 20px;
+    }
+
+    .notification-item {
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid;
+      margin-bottom: 8px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .notification-urgent {
+      background-color: #fef2f2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .notification-warning {
+      background-color: #fffbeb;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .notification-info {
+      background-color: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 20px 0;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      transition: width 0.3s ease;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transform: translateY(0);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .trend-up {
+      color: #10b981;
+    }
+
+    .trend-down {
+      color: #ef4444;
+    }
+
+    .mobile-responsive {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-responsive {
+        display: none;
+      }
+      
+      .mobile-only {
+        display: block;
+      }
+      
+      .action-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      
+      .action-buttons button {
+        flex: 1;
+        min-width: 120px;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-only {
+        display: none;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="bg-gradient-to-br from-gray-50 to-blue-50">
+  <div class="min-h-full p-4 md:p-6">
+   <div class="max-w-7xl mx-auto"><!-- Enhanced Header -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <div class="flex items-center justify-between mb-4">
+      <div>
+       <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">🏢 نظام إدارة العقار المتقدم</h1>
+       <div class="flex items-center gap-4 text-gray-600"><span class="flex items-center gap-2"> 📅 <span id="current-date"></span> </span> <span class="flex items-center gap-2"> ⏰ <span id="current-time"></span> </span>
+       </div>
+      </div>
+      <div class="hidden md:block">
+       <div class="text-right">
+        <div class="text-2xl font-bold text-gray-800">
+         تجميع ايصال شهر
+        </div>
+        <div class="text-lg text-gray-600">
+         عام 2025 م
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="flex flex-wrap gap-3 justify-center md:justify-end"><button id="monthly-batch-btn" class="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md text-sm flex items-center gap-2"> 🔧 إيصال الصيانة الشهرية </button> <button id="print-receipts-btn" class="bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-teal-600 hover:to-cyan-600 transition-all shadow-md text-sm flex items-center gap-2"> 🧾 طباعة الإيصالات </button> <button id="backup-btn" class="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md text-sm flex items-center gap-2"> 💾 نسخ احتياطي </button> <button id="export-btn" class="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all shadow-md text-sm flex items-center gap-2"> 📊 تصدير Excel </button> <button id="print-btn" class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all shadow-md text-sm flex items-center gap-2"> 🖨️ طباعة </button> <button id="add-debt-btn" class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition-all shadow-md text-sm flex items-center gap-2"> 📋 تسجيل مديونية </button> <button id="add-payment-btn" class="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-indigo-600 transition-all shadow-md flex items-center gap-2"> ➕ إضافة دفعة جديدة </button>
+     </div>
+    </div><!-- Enhanced Statistics Dashboard -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+     <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-blue-100 text-sm mb-1">
+         إجمالي الشقق
+        </div>
+        <div id="total-apartments" class="text-2xl font-bold">
+         21
+        </div>
+        <div class="text-blue-200 text-xs mt-1"><span id="apartments-trend" class="trend-up">↗ +0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        🏢
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-green-100 text-sm mb-1">
+         المبلغ المحصل
+        </div>
+        <div id="total-paid" class="text-lg font-bold">
+         0 جنيه
+        </div>
+        <div class="text-green-200 text-xs mt-1"><span id="paid-trend" class="trend-up">↗ +0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        💰
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-red-100 text-sm mb-1">
+         إجمالي الديون
+        </div>
+        <div id="total-debt" class="text-lg font-bold">
+         0 جنيه
+        </div>
+        <div class="text-red-200 text-xs mt-1"><span id="debt-trend" class="trend-down">↘ -0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        📋
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-purple-100 text-sm mb-1">
+         المستأجرين
+        </div>
+        <div id="total-tenants" class="text-2xl font-bold">
+         10
+        </div>
+        <div class="text-purple-200 text-xs mt-1"><span id="tenants-trend" class="trend-up">↗ +0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        👥
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-orange-100 text-sm mb-1">
+         نسبة التحصيل
+        </div>
+        <div id="collection-rate" class="text-2xl font-bold">
+         0%
+        </div>
+        <div class="progress-bar mt-2">
+         <div id="collection-progress" class="progress-fill" style="width: 0%"></div>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        📊
+       </div>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-xl shadow-lg p-4 transform hover:scale-105 transition-all">
+      <div class="flex items-center justify-between">
+       <div>
+        <div class="text-teal-100 text-sm mb-1">
+         الديون المستحقة
+        </div>
+        <div id="overdue-debts" class="text-xl font-bold">
+         0
+        </div>
+        <div class="text-teal-200 text-xs mt-1"><span id="overdue-trend" class="trend-down">↘ -0%</span>
+        </div>
+       </div>
+       <div class="text-3xl opacity-80">
+        ⚠️
+       </div>
+      </div>
+     </div>
+    </div><!-- Advanced Reports Section -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+      <h3 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">📊 التقارير والإحصائيات المتقدمة</h3>
+      <div class="flex flex-wrap gap-2"><button id="toggle-charts" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all text-sm flex items-center gap-2"> 📈 عرض الرسوم البيانية </button> <button id="monthly-report-btn" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all text-sm flex items-center gap-2"> 📅 تقرير شهري </button> <button id="yearly-report-btn" class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-emerald-600 hover:to-green-700 transition-all text-sm flex items-center gap-2"> 📆 تقرير سنوي </button>
+      </div>
+     </div><!-- Charts Container -->
+     <div id="charts-container" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><!-- Payment Status Chart -->
+       <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+        <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">📊 توزيع حالات السداد</h4>
+        <div class="chart-container">
+         <canvas id="payment-status-chart" width="300" height="200"></canvas>
+        </div>
+        <div id="payment-status-legend" class="flex justify-center gap-4 mt-4 text-sm flex-wrap"></div>
+       </div><!-- Monthly Income Chart -->
+       <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+        <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">💰 الإيرادات الشهرية</h4>
+        <div class="chart-container">
+         <canvas id="monthly-income-chart" width="300" height="200"></canvas>
+        </div>
+       </div>
+      </div><!-- Debt Analysis -->
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+       <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center flex items-center justify-center gap-2">📋 تحليل المديونيات حسب النوع</h4>
+       <div class="chart-container">
+        <canvas id="debt-analysis-chart" width="600" height="300"></canvas>
+       </div>
+      </div>
+     </div><!-- Quick Stats Grid -->
+     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-emerald-600 text-3xl mb-2">
+        ✅
+       </div>
+       <div class="text-emerald-800 font-semibold text-sm">
+        الشقق المدفوعة
+       </div>
+       <div id="paid-apartments" class="text-2xl font-bold text-emerald-600">
+        0
+       </div>
+       <div class="text-emerald-500 text-xs mt-1">
+        من إجمالي الشقق
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-red-600 text-3xl mb-2">
+        ❌
+       </div>
+       <div class="text-red-800 font-semibold text-sm">
+        الشقق غير المدفوعة
+       </div>
+       <div id="unpaid-apartments" class="text-2xl font-bold text-red-600">
+        0
+       </div>
+       <div class="text-red-500 text-xs mt-1">
+        تحتاج متابعة
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-yellow-600 text-3xl mb-2">
+        ⚠️
+       </div>
+       <div class="text-yellow-800 font-semibold text-sm">
+        دفع جزئي
+       </div>
+       <div id="partial-apartments" class="text-2xl font-bold text-yellow-600">
+        0
+       </div>
+       <div class="text-yellow-500 text-xs mt-1">
+        تحتاج استكمال
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-4 text-center hover:shadow-lg transition-all">
+       <div class="text-gray-600 text-3xl mb-2">
+        🏠
+       </div>
+       <div class="text-gray-800 font-semibold text-sm">
+        الشقق الفارغة
+       </div>
+       <div id="empty-apartments" class="text-2xl font-bold text-gray-600">
+        0
+       </div>
+       <div class="text-gray-500 text-xs mt-1">
+        متاحة للإيجار
+       </div>
+      </div>
+     </div>
+    </div><!-- Enhanced Notifications Panel -->
+    <div id="notifications-panel" class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">🔔 التنبيهات والتذكيرات <span id="notifications-count" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">0</span></h3><button id="clear-notifications" class="text-gray-500 hover:text-red-500 transition-colors text-sm"> 🗑️ مسح الكل </button>
+     </div>
+     <div id="notifications-list" class="space-y-3">
+      <div class="text-center text-gray-500 py-8">
+       <div class="text-4xl mb-2">
+        🔕
+       </div>
+       <p>لا توجد تنبيهات حالياً</p>
+      </div>
+     </div>
+    </div><!-- Enhanced Filters -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">🔍 البحث والتصفية المتقدمة</h3>
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">البحث بالاسم</label> <input type="text" id="search-name" placeholder="ابحث عن ساكن..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">نوع الساكن</label> <select id="filter-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">الكل</option> <option value="مالك">مالك</option> <option value="مستأجر">مستأجر</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">حالة السداد</label> <select id="filter-payment" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">الكل</option> <option value="مدفوع">مدفوع</option> <option value="غير مدفوع">غير مدفوع</option> <option value="دفع جزئي">دفع جزئي</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">الدور</label> <select id="filter-floor" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">الكل</option> </select>
+      </div>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">الشهر</label> <select id="filter-month" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">جميع الشهور</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">السنة</label> <select id="filter-year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">جميع السنوات</option> <option value="2025">2025</option> <option value="2024">2024</option> <option value="2023">2023</option> </select>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-2">نوع الدفعة</label> <select id="filter-payment-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"> <option value="">جميع الأنواع</option> <option value="إيجار شهري">إيجار شهري</option> <option value="صيانة دورية">صيانة دورية</option> <option value="فواتير كهرباء">فواتير كهرباء</option> <option value="رسوم إدارية">رسوم إدارية</option> </select>
+      </div>
+     </div>
+     <div class="flex flex-wrap gap-3"><button id="clear-filters" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2"> 🔄 مسح الفلاتر </button> <button id="save-filter" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all flex items-center gap-2"> 💾 حفظ الفلتر </button> <button id="advanced-search" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-all flex items-center gap-2"> 🔍 بحث متقدم </button>
+     </div>
+    </div><!-- Enhanced Table -->
+    <div class="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+     <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-bold text-gray-800">📋 جدول الشقق والمدفوعات</h3>
+      <div class="flex gap-2"><span class="text-sm text-gray-600">عرض <span id="showing-count">0</span> من <span id="total-count">0</span> شقة</span>
+      </div>
+     </div>
+     <div class="table-container">
+      <table id="apartments-table">
+       <thead>
+        <tr>
+         <th>م</th>
+         <th>الدور</th>
+         <th>رقم الشقة</th>
+         <th>مكان الشقة</th>
+         <th>اسم الساكن</th>
+         <th>حالة الشقة</th>
+         <th>نوع الساكن</th>
+         <th>المبلغ</th>
+         <th>دفع</th>
+         <th>حالة السداد</th>
+         <th>ديون</th>
+         <th>نوع الدفعة</th>
+         <th>ملاحظات</th>
+         <th>طريقة الدفع</th>
+         <th>إجراءات</th>
+        </tr>
+       </thead>
+       <tbody id="table-body">
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+  </div><!-- All existing modals remain the same --> <!-- Add/Edit Payment Modal -->
+  <div id="payment-modal" class="modal">
+   <div class="modal-content">
+    <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-4">إضافة دفعة جديدة</h3>
+    <form id="payment-form">
+     <div class="form-group"><label>الشقة</label> <select id="apartment-select" required> <option value="">اختر الشقة</option> </select>
+     </div>
+     <div class="form-group"><label>نوع الدفعة</label> <select id="payment-type-input"> <option value="">اختر نوع الدفعة</option> <optgroup label="💰 الإيجارات"> <option value="إيجار شهري">💰 إيجار شهري</option> <option value="إيجار مقدم">💵 إيجار مقدم</option> <option value="تأمين إيجار">🛡️ تأمين إيجار</option> <option value="زيادة إيجار">📈 زيادة إيجار</option> <option value="عمولة تسويق">🤝 عمولة تسويق</option> </optgroup> <optgroup label="🔧 الصيانة"> <option value="صيانة دورية">🔧 صيانة دورية</option> <option value="إصلاحات طارئة">⚡ إصلاحات طارئة</option> <option value="تجديدات">🏗️ تجديدات</option> <option value="صيانة مصعد">🛗 صيانة مصعد</option> <option value="طلاء وترميم">🎨 طلاء وترميم</option> </optgroup> <optgroup label="⚡ الخدمات"> <option value="فواتير كهرباء">⚡ فواتير كهرباء</option> <option value="فواتير مياه">💧 فواتير مياه</option> <option value="فواتير غاز">🔥 فواتير غاز</option> <option value="إنترنت وتليفون">📞 إنترنت وتليفون</option> <option value="خدمة أمن وحراسة">🛡️ خدمة أمن وحراسة</option> <option value="خدمة نظافة">🧹 خدمة نظافة</option> </optgroup> <optgroup label="📋 رسوم إدارية"> <option value="رسوم إدارية">📋 رسوم إدارية</option> <option value="غرامات">⚠️ غرامات</option> <option value="رسوم تحصيل">💼 رسوم تحصيل</option> <option value="رسوم قانونية">⚖️ رسوم قانونية</option> </optgroup> <optgroup label="🔄 أخرى"> <option value="مصاريف متنوعة">📊 مصاريف متنوعة</option> <option value="تعويضات">💰 تعويضات</option> <option value="أخرى">❓ أخرى</option> </optgroup> </select>
+     </div>
+     <div class="form-group"><label>المبلغ المطلوب</label> <input type="number" id="amount-input" min="0" step="0.01" required>
+     </div>
+     <div class="form-group"><label>المبلغ المدفوع</label> <input type="number" id="paid-input" min="0" step="0.01" required>
+     </div>
+     <div class="form-group"><label>حالة السداد</label> <select id="payment-status-input" required> <option value="">اختر الحالة</option> <option value="مدفوع">✅ مدفوع</option> <option value="غير مدفوع">❌ غير مدفوع</option> <option value="دفع جزئي">⚠️ دفع جزئي</option> </select>
+     </div>
+     <div class="form-group"><label>طريقة الدفع</label> <select id="payment-method-input"> <option value="">اختر طريقة الدفع</option> <optgroup label="💵 النقدي والتحويلات"> <option value="نقدي">💵 نقدي</option> <option value="تحويل بنكي">🏦 تحويل بنكي</option> <option value="إيداع بنكي">🏧 إيداع بنكي</option> <option value="شيك">📝 شيك</option> </optgroup> <optgroup label="📱 المحافظ الإلكترونية"> <option value="فودافون كاش">📱 فودافون كاش</option> <option value="انستاباي">💳 انستاباي</option> <option value="أورانج موني">🟠 أورانج موني</option> <option value="اتصالات كاش">🔵 اتصالات كاش</option> <option value="وي باي">💰 وي باي</option> </optgroup> <optgroup label="💳 البطاقات الائتمانية"> <option value="فيزا">💳 فيزا</option> <option value="ماستركارد">💳 ماستركارد</option> <option value="بطاقة ائتمان أخرى">💳 بطاقة ائتمان أخرى</option> </optgroup> <optgroup label="🔄 طرق أخرى"> <option value="تقسيط">📊 تقسيط</option> <option value="خصم من التأمين">🔄 خصم من التأمين</option> <option value="مقايضة خدمات">🤝 مقايضة خدمات</option> <option value="أخرى">❓ أخرى</option> </optgroup> </select>
+     </div>
+     <div class="form-group"><label>الشهر</label> <select id="month-input" required> <option value="">اختر الشهر</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+     </div>
+     <div class="form-group"><label>السنة</label> <input type="number" id="year-input" value="2025" required>
+     </div>
+     <div class="form-group"><label>ملاحظات</label> <textarea id="notes-input" rows="3" placeholder="ملاحظات إضافية..."></textarea>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="submit-btn" class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"> حفظ </button> <button type="button" id="cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Edit Apartment Modal -->
+  <div id="apartment-modal" class="modal">
+   <div class="modal-content">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">🏠 تعديل بيانات الشقة</h3>
+    <form id="apartment-form">
+     <div class="form-group"><label>الدور</label> <input type="text" id="apt-floor-input" required placeholder="مثال: الأول">
+     </div>
+     <div class="form-group"><label>رقم الشقة</label> <input type="text" id="apt-number-input" required placeholder="مثال: 101">
+     </div>
+     <div class="form-group"><label>مكان الشقة</label> <select id="apt-location-input" required> <option value="">اختر المكان</option> <option value="يمين السلم">يمين السلم</option> <option value="يسار السلم">يسار السلم</option> <option value="وسط">وسط</option> </select>
+     </div>
+     <div class="form-group"><label>اسم الساكن</label> <input type="text" id="apt-resident-input" required placeholder="مثال: أ - محمد أحمد">
+     </div>
+     <div class="form-group"><label>حالة الشقة</label> <select id="apt-status-input" required> <option value="">اختر الحالة</option> <option value="ساكنة">ساكنة</option> <option value="فارغة">فارغة</option> <option value="تحت الصيانة">تحت الصيانة</option> </select>
+     </div>
+     <div class="form-group"><label>نوع الساكن</label> <select id="apt-type-input" required> <option value="">اختر النوع</option> <option value="مالك">مالك</option> <option value="مستأجر">مستأجر</option> </select>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="apt-submit-btn" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all"> حفظ التعديلات </button> <button type="button" id="apt-cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Debt Registration Modal -->
+  <div id="debt-modal" class="modal">
+   <div class="modal-content">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 تسجيل مديونية جديدة</h3>
+    <form id="debt-form">
+     <div class="form-group"><label>الشقة</label> <select id="debt-apartment-select" required> <option value="">اختر الشقة</option> </select>
+     </div>
+     <div class="form-group"><label>نوع المديونية</label> <select id="debt-type-input" required> <option value="">اختر نوع المديونية</option> <optgroup label="💰 الإيجارات والرسوم الأساسية"> <option value="إيجار شهري">💰 إيجار شهري</option> <option value="إيجار متأخر">⏰ إيجار متأخر</option> <option value="زيادة إيجار">📈 زيادة إيجار</option> <option value="تأمين الشقة">🛡️ تأمين الشقة</option> <option value="عمولة تسويق">🤝 عمولة تسويق</option> </optgroup> <optgroup label="🔧 الصيانة والإصلاحات"> <option value="صيانة دورية">🔧 صيانة دورية</option> <option value="إصلاح سباكة">🚿 إصلاح سباكة</option> <option value="إصلاح كهرباء">⚡ إصلاح كهرباء</option> <option value="صيانة مصعد">🛗 صيانة مصعد</option> <option value="طلاء وترميم">🎨 طلاء وترميم</option> <option value="تغيير أقفال">🔐 تغيير أقفال</option> <option value="إصلاح تكييف">❄️ إصلاح تكييف</option> </optgroup> <optgroup label="⚡ الخدمات والمرافق"> <option value="فاتورة كهرباء">⚡ فاتورة كهرباء</option> <option value="فاتورة مياه">💧 فاتورة مياه</option> <option value="فاتورة غاز">🔥 فاتورة غاز</option> <option value="إنترنت وتليفون">📞 إنترنت وتليفون</option> <option value="تلفزيون كابل">📺 تلفزيون كابل</option> <option value="خدمة أمن وحراسة">🛡️ خدمة أمن وحراسة</option> <option value="خدمة نظافة">🧹 خدمة نظافة</option> </optgroup> <optgroup label="📋 الرسوم الإدارية والقانونية"> <option value="رسوم إدارية">📋 رسوم إدارية</option> <option value="رسوم تحصيل">💼 رسوم تحصيل</option> <option value="غرامة تأخير">⚠️ غرامة تأخير</option> <option value="رسوم قانونية">⚖️ رسوم قانونية</option> <option value="رسوم محكمة">🏛️ رسوم محكمة</option> <option value="أتعاب محاماة">👨‍💼 أتعاب محاماة</option> </optgroup> <optgroup label="🏗️ التحسينات والإضافات"> <option value="تركيب جديد">🔧 تركيب جديد</option> <option value="تحسينات الشقة">🏗️ تحسينات الشقة</option> <option value="أجهزة ومعدات">📱 أجهزة ومعدات</option> <option value="تجديد عقد">📄 تجديد عقد</option> </optgroup> <optgroup label="🔄 أخرى"> <option value="مصاريف متنوعة">📊 مصاريف متنوعة</option> <option value="تعويضات">💰 تعويضات</option> <option value="أخرى">❓ أخرى</option> </optgroup> </select>
+     </div>
+     <div class="form-group"><label>وصف المديونية</label> <input type="text" id="debt-description-input" placeholder="مثال: إيجار شهر يناير 2025" required>
+     </div>
+     <div class="form-group"><label>مبلغ المديونية</label> <input type="number" id="debt-amount-input" min="0" step="0.01" placeholder="0.00" required>
+     </div>
+     <div class="form-group"><label>تاريخ الاستحقاق</label> <input type="date" id="debt-due-date-input" required>
+     </div>
+     <div class="form-group"><label>الشهر المستحق</label> <select id="debt-month-input" required> <option value="">اختر الشهر</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+     </div>
+     <div class="form-group"><label>السنة</label> <input type="number" id="debt-year-input" value="2025" required>
+     </div>
+     <div class="form-group"><label>ملاحظات إضافية</label> <textarea id="debt-notes-input" rows="3" placeholder="ملاحظات أو تفاصيل إضافية..."></textarea>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="debt-submit-btn" class="flex-1 bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-red-700 hover:to-pink-700 transition-all"> تسجيل المديونية </button> <button type="button" id="debt-cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Backup Modal -->
+  <div id="backup-modal" class="modal">
+   <div class="modal-content">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">💾 النسخ الاحتياطي واستعادة البيانات</h3>
+    <div class="backup-section">
+     <h4 class="text-lg font-semibold mb-3">تصدير البيانات</h4>
+     <p class="text-gray-600 mb-3">احفظ نسخة احتياطية من جميع بيانات العقار</p><button id="download-backup" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"> 📥 تحميل النسخة الاحتياطية </button>
+    </div>
+    <div class="backup-section">
+     <h4 class="text-lg font-semibold mb-3">استعادة البيانات</h4>
+     <p class="text-gray-600 mb-3">استعد البيانات من ملف النسخة الاحتياطية</p><input type="file" id="restore-file" accept=".json"> <label for="restore-file" class="bg-blue-600 hover:bg-blue-700"> 📤 اختر ملف الاستعادة </label> <button id="restore-backup" class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700" style="display:none;"> 🔄 استعادة البيانات </button>
+    </div>
+    <div class="flex gap-3 mt-6"><button id="close-backup-modal" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إغلاق </button>
+    </div>
+   </div>
+  </div><!-- Monthly Report Modal -->
+  <div id="monthly-report-modal" class="modal">
+   <div class="modal-content" style="max-width: 800px;">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">📅 التقرير الشهري المفصل</h3>
+    <div id="monthly-report-content"><!-- Content will be populated by JavaScript -->
+    </div>
+    <div class="flex gap-3 mt-6"><button id="export-monthly-report" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all"> 📊 تصدير التقرير </button> <button id="close-monthly-report" class="bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-all"> إغلاق </button>
+    </div>
+   </div>
+  </div><!-- Monthly Maintenance Receipt Modal -->
+  <div id="monthly-batch-modal" class="modal">
+   <div class="modal-content" style="max-width: 900px;">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">🔧 إيصال الصيانة الشهرية</h3>
+    <form id="monthly-batch-form">
+     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <p class="text-blue-800 text-sm">ℹ️ سيتم إنشاء إيصال صيانة شهرية لجميع الشقق الساكنة. يمكنك تحديد المبلغ لكل شقة وحالة السداد. الشقق غير المدفوعة سيتم تسجيلها كمديونية صيانة شهرية.</p>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="form-group"><label>الشهر</label> <select id="batch-month-input" required> <option value="">اختر الشهر</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+      </div>
+      <div class="form-group"><label>السنة</label> <input type="number" id="batch-year-input" value="2025" required>
+      </div>
+     </div>
+     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+      <h4 class="font-semibold text-gray-800 mb-3">📋 تحديد مبالغ الصيانة لكل شقة</h4>
+      <div id="apartments-amounts-list" class="space-y-2 max-h-96 overflow-y-auto"><!-- Will be populated by JavaScript -->
+      </div>
+     </div>
+     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+      <p class="text-yellow-800 text-sm font-semibold">⚠️ سيتم إنشاء إيصال صيانة لـ <span id="batch-apartments-count">0</span> شقة ساكنة</p>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="batch-submit-btn" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all"> إنشاء إيصالات الصيانة </button> <button type="button" id="batch-cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Print Receipts Modal -->
+  <div id="print-receipts-modal" class="modal">
+   <div class="modal-content" style="max-width: 600px;">
+    <h3 class="text-2xl font-bold text-gray-800 mb-4">🧾 طباعة الإيصالات الشهرية</h3>
+    <form id="print-receipts-form">
+     <div class="form-group"><label>الشهر</label> <select id="receipts-month-input" required> <option value="">اختر الشهر</option> <option value="يناير">يناير</option> <option value="فبراير">فبراير</option> <option value="مارس">مارس</option> <option value="أبريل">أبريل</option> <option value="مايو">مايو</option> <option value="يونيو">يونيو</option> <option value="يوليو">يوليو</option> <option value="أغسطس">أغسطس</option> <option value="سبتمبر">سبتمبر</option> <option value="أكتوبر">أكتوبر</option> <option value="نوفمبر">نوفمبر</option> <option value="ديسمبر">ديسمبر</option> </select>
+     </div>
+     <div class="form-group"><label>السنة</label> <input type="number" id="receipts-year-input" value="2025" required>
+     </div>
+     <div class="form-group"><label>نوع الإيصالات</label> <select id="receipts-type-input" required> <option value="all">جميع الشقق</option> <option value="paid">الشقق المدفوعة فقط</option> <option value="unpaid">الشقق غير المدفوعة فقط</option> <option value="partial">الدفع الجزئي فقط</option> </select>
+     </div>
+     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <p class="text-blue-800 text-sm">📋 سيتم طباعة إيصالات منفصلة لكل شقة مع تفاصيل الدفعة والمديونيات</p>
+     </div>
+     <div class="flex gap-3 mt-6"><button type="submit" id="receipts-submit-btn" class="flex-1 bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-teal-700 hover:to-cyan-700 transition-all"> 🖨️ طباعة الإيصالات </button> <button type="button" id="receipts-cancel-btn" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all"> إلغاء </button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <script>
+    let referenceApartments = [
+      { id: "2", floor: "الأول", number: "101", location: "يمين السلم", resident: "أ - عبد المجيد سلطان", status: "ساكنة", type: "مالك" },
+      { id: "3", floor: "الأول", number: "102", location: "يسار السلم", resident: "أ - رضا وهيب", status: "ساكنة", type: "مالك" },
+      { id: "4", floor: "الثانى", number: "201", location: "يمين السلم", resident: "أ - ماجد محمد سامي", status: "ساكنة", type: "مالك" },
+      { id: "5", floor: "الثانى", number: "202", location: "يسار السلم", resident: "أ- محمد", status: "ساكنة", type: "مستأجر" },
+      { id: "6", floor: "الثالث", number: "301", location: "يمين السلم", resident: "أ- سيدة علي", status: "ساكنة", type: "مالك" },
+      { id: "7", floor: "الثالث", number: "302", location: "يسار السلم", resident: "أ - مرتضي", status: "ساكنة", type: "مستأجر" },
+      { id: "8", floor: "الرابع", number: "401", location: "يمين السلم", resident: "أ - فادي سمير", status: "ساكنة", type: "مستأجر" },
+      { id: "9", floor: "الرابع", number: "402", location: "يسار السلم", resident: "أ - منتصر احمد علي", status: "ساكنة", type: "مستأجر" },
+      { id: "11", floor: "الخامس", number: "502", location: "يسار السلم", resident: "الحاج محمد عبد المنعم", status: "ساكنة", type: "مالك" },
+      { id: "12", floor: "السادس", number: "601", location: "يمين السلم", resident: "أ - فادي راشد", status: "ساكنة", type: "مالك" },
+      { id: "13", floor: "السادس", number: "602", location: "يسار السلم", resident: "أ - محمد يوسف", status: "ساكنة", type: "مالك" },
+      { id: "14", floor: "السابع", number: "701", location: "يمين السلم", resident: "أ - محمد محسن", status: "ساكنة", type: "مستأجر" },
+      { id: "16", floor: "الثامن", number: "801", location: "يمين السلم", resident: "أ - محمد السيد", status: "ساكنة", type: "مستأجر" },
+      { id: "19", floor: "التاسع", number: "902", location: "يسار السلم", resident: "أ - سلامة ماضي", status: "ساكنة", type: "مستأجر" },
+      { id: "20", floor: "العاشر", number: "1001", location: "يمين السلم", resident: "أ - احمد سعيد", status: "ساكنة", type: "مالك" },
+      { id: "21", floor: "العاشر", number: "1002", location: "يسار السلم", resident: "أ - عاطف عبد العزيز", status: "ساكنة", type: "مستأجر" },
+      { id: "23", floor: "الحادى عشر", number: "1102", location: "يسار السلم", resident: "م . رانيا رمزي", status: "ساكنة", type: "مستأجر" },
+      { id: "24", floor: "الثانى عشر", number: "1201", location: "يمين السلم", resident: "أ - مشيل انطونيوس", status: "ساكنة", type: "مالك" },
+      { id: "25", floor: "الثانى عشر", number: "1202", location: "يسار السلم", resident: "أ - محمد جمال احمد", status: "ساكنة", type: "مالك" },
+      { id: "26", floor: "الثالث عشر", number: "1301", location: "يمين السلم", resident: "م . جورجيت حبيب", status: "ساكنة", type: "مالك" },
+      { id: "27", floor: "الثالث عشر", number: "1302", location: "يسار السلم", resident: "د. سامي عادل", status: "ساكنة", type: "مالك" }
+    ];
+
+    let allPayments = [];
+    let allDebts = [];
+    let currentEditingPayment = null;
+    let currentEditingApartment = null;
+    let filteredApartments = [...referenceApartments];
+    let notifications = [];
+    let chartsVisible = false;
+
+    // Initialize the app
+    function initializeApp() {
+      loadFromLocalStorage();
+      populateApartmentSelect();
+      populateFloorFilter();
+      setupEventListeners();
+      applyFilters();
+      updateStatistics();
+      updateDateTime();
+      generateNotifications();
+      
+      // Update time every minute
+      setInterval(updateDateTime, 60000);
+      
+      // Check for notifications every 5 minutes
+      setInterval(generateNotifications, 300000);
+    }
+
+    // Update date and time display
+    function updateDateTime() {
+      const now = new Date();
+      const dateOptions = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        weekday: 'long'
+      };
+      const timeOptions = { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      };
+      
+      document.getElementById('current-date').textContent = now.toLocaleDateString('ar-EG', dateOptions);
+      document.getElementById('current-time').textContent = now.toLocaleTimeString('ar-EG', timeOptions);
+    }
+
+    // Generate smart notifications
+    function generateNotifications() {
+      notifications = [];
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      // Check for overdue debts
+      allDebts.forEach(debt => {
+        const dueDate = new Date(debt.due_date);
+        if (dueDate < today) {
+          const daysOverdue = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+          notifications.push({
+            type: 'urgent',
+            icon: '🚨',
+            title: 'مديونية متأخرة',
+            message: `${debt.resident_name} - شقة ${debt.apartment_number}: ${debt.description} متأخرة ${daysOverdue} يوم`,
+            apartment_id: debt.apartment_id
+          });
+        }
+      });
+      
+      // Check for unpaid apartments this month
+      referenceApartments.forEach(apt => {
+        const payment = allPayments.find(p => p.apartment_id === apt.id);
+        if (!payment || payment.payment_status === 'غير مدفوع') {
+          notifications.push({
+            type: 'warning',
+            icon: '⚠️',
+            title: 'دفعة غير مسددة',
+            message: `${apt.resident} - شقة ${apt.number}: لم يتم السداد هذا الشهر`,
+            apartment_id: apt.id
+          });
+        }
+      });
+      
+      // Check for partial payments
+      allPayments.forEach(payment => {
+        if (payment.payment_status === 'دفع جزئي') {
+          const remaining = payment.amount - payment.paid;
+          notifications.push({
+            type: 'info',
+            icon: '💰',
+            title: 'دفعة جزئية',
+            message: `${payment.resident_name} - شقة ${payment.apartment_number}: متبقي ${remaining.toFixed(2)} جنيه`,
+            apartment_id: payment.apartment_id
+          });
+        }
+      });
+      
+      // Check for empty apartments
+      referenceApartments.forEach(apt => {
+        if (apt.status === 'فارغة') {
+          notifications.push({
+            type: 'info',
+            icon: '🏠',
+            title: 'شقة فارغة',
+            message: `شقة ${apt.number} في ${apt.floor} فارغة ومتاحة للإيجار`,
+            apartment_id: apt.id
+          });
+        }
+      });
+      
+      updateNotificationsDisplay();
+    }
+
+    // Update notifications display
+    function updateNotificationsDisplay() {
+      const notificationsList = document.getElementById('notifications-list');
+      const notificationsCount = document.getElementById('notifications-count');
+      
+      notificationsCount.textContent = notifications.length;
+      
+      if (notifications.length === 0) {
+        notificationsList.innerHTML = `
+          <div class="text-center text-gray-500 py-8">
+            <div class="text-4xl mb-2">🔕</div>
+            <p>لا توجد تنبيهات حالياً</p>
+          </div>
+        `;
+        return;
+      }
+      
+      notificationsList.innerHTML = notifications.map(notification => `
+        <div class="notification-item notification-${notification.type}">
+          <div class="flex items-start gap-3">
+            <div class="text-2xl">${notification.icon}</div>
+            <div class="flex-1">
+              <div class="font-semibold">${notification.title}</div>
+              <div class="text-sm mt-1">${notification.message}</div>
+            </div>
+            <button onclick="dismissNotification('${notification.apartment_id}')" class="text-gray-400 hover:text-gray-600">
+              ✕
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Dismiss notification
+    window.dismissNotification = function(apartmentId) {
+      notifications = notifications.filter(n => n.apartment_id !== apartmentId);
+      updateNotificationsDisplay();
+    };
+
+    // Clear all notifications
+    function clearAllNotifications() {
+      notifications = [];
+      updateNotificationsDisplay();
+    }
+
+    // Local Storage Functions
+    function saveToLocalStorage() {
+      localStorage.setItem('propertyManagementData', JSON.stringify(allPayments));
+      localStorage.setItem('propertyDebtsData', JSON.stringify(allDebts));
+      localStorage.setItem('propertyApartmentsData', JSON.stringify(referenceApartments));
+    }
+
+    function loadFromLocalStorage() {
+      const paymentsData = localStorage.getItem('propertyManagementData');
+      if (paymentsData) {
+        allPayments = JSON.parse(paymentsData);
+      }
+      
+      const debtsData = localStorage.getItem('propertyDebtsData');
+      if (debtsData) {
+        allDebts = JSON.parse(debtsData);
+      }
+      
+      const apartmentsData = localStorage.getItem('propertyApartmentsData');
+      if (apartmentsData) {
+        referenceApartments = JSON.parse(apartmentsData);
+        filteredApartments = [...referenceApartments];
+      }
+    }
+
+    function populateFloorFilter() {
+      const floorSelect = document.getElementById('filter-floor');
+      floorSelect.innerHTML = '<option value="">الكل</option>';
+      const floors = [...new Set(referenceApartments.map(apt => apt.floor))];
+      
+      floors.forEach(floor => {
+        const option = document.createElement('option');
+        option.value = floor;
+        option.textContent = floor;
+        floorSelect.appendChild(option);
+      });
+    }
+
+    function populateApartmentSelect() {
+      const select = document.getElementById('apartment-select');
+      const debtSelect = document.getElementById('debt-apartment-select');
+      
+      select.innerHTML = '<option value="">اختر الشقة</option>';
+      debtSelect.innerHTML = '<option value="">اختر الشقة</option>';
+      
+      referenceApartments.forEach(apt => {
+        const option = document.createElement('option');
+        option.value = apt.id;
+        option.textContent = `${apt.number} - ${apt.resident} (${apt.floor})`;
+        select.appendChild(option);
+        
+        const debtOption = document.createElement('option');
+        debtOption.value = apt.id;
+        debtOption.textContent = `${apt.number} - ${apt.resident} (${apt.floor})`;
+        debtSelect.appendChild(debtOption);
+      });
+    }
+
+    function applyFilters() {
+      const searchName = document.getElementById('search-name')?.value.toLowerCase() || '';
+      const filterType = document.getElementById('filter-type')?.value || '';
+      const filterPayment = document.getElementById('filter-payment')?.value || '';
+      const filterFloor = document.getElementById('filter-floor')?.value || '';
+      const filterMonth = document.getElementById('filter-month')?.value || '';
+      const filterYear = document.getElementById('filter-year')?.value || '';
+      const filterPaymentType = document.getElementById('filter-payment-type')?.value || '';
+
+      filteredApartments = referenceApartments.filter(apt => {
+        const payment = allPayments.find(p => p.apartment_id === apt.id);
+        
+        const matchesName = apt.resident.toLowerCase().includes(searchName);
+        const matchesType = !filterType || apt.type === filterType;
+        const matchesPayment = !filterPayment || (payment && payment.payment_status === filterPayment);
+        const matchesFloor = !filterFloor || apt.floor === filterFloor;
+        const matchesMonth = !filterMonth || (payment && payment.month === filterMonth);
+        const matchesYear = !filterYear || (payment && payment.year.toString() === filterYear);
+        const matchesPaymentType = !filterPaymentType || (payment && payment.payment_type === filterPaymentType);
+        
+        return matchesName && matchesType && matchesPayment && matchesFloor && matchesMonth && matchesYear && matchesPaymentType;
+      });
+      
+      renderTable();
+      updateStatistics();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+      
+      document.getElementById('showing-count').textContent = filteredApartments.length;
+      document.getElementById('total-count').textContent = referenceApartments.length;
+      
+      filteredApartments.forEach(apt => {
+        const payment = allPayments.find(p => p.apartment_id === apt.id);
+        const row = document.createElement('tr');
+        
+        const amount = payment?.amount || 0;
+        const paid = payment?.paid || 0;
+        const paymentDebt = amount - paid;
+        const registeredDebt = allDebts.filter(d => d.apartment_id === apt.id).reduce((sum, d) => sum + d.amount, 0);
+        const debt = paymentDebt + registeredDebt;
+        
+        let paymentStatusBadge = '-';
+        if (payment) {
+          const badgeClass = payment.payment_status === 'مدفوع' ? 'paid-badge' : 
+                           payment.payment_status === 'دفع جزئي' ? 'partial-badge' : 'unpaid-badge';
+          paymentStatusBadge = `<span class="${badgeClass}">${payment.payment_status}</span>`;
+        }
+        
+        row.innerHTML = `
+          <td>${apt.id}</td>
+          <td>${apt.floor}</td>
+          <td>${apt.number}</td>
+          <td>${apt.location}</td>
+          <td>${apt.resident}</td>
+          <td>${apt.status}</td>
+          <td><span class="${apt.type === 'مالك' ? 'owner-badge' : 'tenant-badge'}">${apt.type}</span></td>
+          <td>${amount.toFixed(2)}</td>
+          <td>${paid.toFixed(2)}</td>
+          <td>${paymentStatusBadge}</td>
+          <td>${debt.toFixed(2)}</td>
+          <td>${payment?.payment_type || '-'}</td>
+          <td>${payment?.notes || '-'}</td>
+          <td>${payment?.payment_method || '-'}</td>
+          <td>
+            <div class="action-buttons">
+              <button onclick="editApartment('${apt.id}')" class="bg-green-500 text-white rounded hover:bg-green-600">
+                🏠 تعديل الشقة
+              </button>
+              <button onclick="editPayment('${apt.id}')" class="bg-blue-500 text-white rounded hover:bg-blue-600">
+                ${payment ? '💰 تعديل دفعة' : '➕ إضافة دفعة'}
+              </button>
+              <button onclick="viewDebts('${apt.id}')" class="bg-orange-500 text-white rounded hover:bg-orange-600">
+                📋 عرض المديونية
+              </button>
+              ${payment ? `<button onclick="deletePayment('${apt.id}')" class="bg-red-500 text-white rounded hover:bg-red-600">🗑️ حذف دفعة</button>` : ''}
+            </div>
+          </td>
+        `;
+        
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateStatistics() {
+      const totalApartments = referenceApartments.length;
+      const totalPaid = allPayments.reduce((sum, p) => sum + (p.paid || 0), 0);
+      const totalAmount = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const paymentDebt = totalAmount - totalPaid;
+      const registeredDebt = allDebts.reduce((sum, d) => sum + (d.amount || 0), 0);
+      const totalDebt = paymentDebt + registeredDebt;
+      const totalTenants = referenceApartments.filter(a => a.type === 'مستأجر').length;
+      const collectionRate = totalAmount > 0 ? ((totalPaid / totalAmount) * 100).toFixed(1) : 0;
+      
+      // Count apartments by payment status
+      const paidApartments = allPayments.filter(p => p.payment_status === 'مدفوع').length;
+      const unpaidApartments = referenceApartments.length - allPayments.length + allPayments.filter(p => p.payment_status === 'غير مدفوع').length;
+      const partialApartments = allPayments.filter(p => p.payment_status === 'دفع جزئي').length;
+      const emptyApartments = referenceApartments.filter(a => a.status === 'فارغة').length;
+      
+      // Count overdue debts
+      const today = new Date();
+      const overdueDebts = allDebts.filter(d => new Date(d.due_date) < today).length;
+      
+      // Update main statistics
+      document.getElementById('total-apartments').textContent = totalApartments;
+      document.getElementById('total-paid').textContent = totalPaid.toFixed(2) + ' جنيه';
+      document.getElementById('total-debt').textContent = totalDebt.toFixed(2) + ' جنيه';
+      document.getElementById('total-tenants').textContent = totalTenants;
+      document.getElementById('collection-rate').textContent = collectionRate + '%';
+      document.getElementById('overdue-debts').textContent = overdueDebts;
+      
+      // Update quick stats
+      document.getElementById('paid-apartments').textContent = paidApartments;
+      document.getElementById('unpaid-apartments').textContent = unpaidApartments;
+      document.getElementById('partial-apartments').textContent = partialApartments;
+      document.getElementById('empty-apartments').textContent = emptyApartments;
+      
+      // Update collection progress bar
+      document.getElementById('collection-progress').style.width = collectionRate + '%';
+    }
+
+    // Charts functionality
+    function toggleCharts() {
+      const chartsContainer = document.getElementById('charts-container');
+      const toggleBtn = document.getElementById('toggle-charts');
+      
+      if (chartsVisible) {
+        chartsContainer.classList.add('hidden');
+        toggleBtn.textContent = '📈 عرض الرسوم البيانية';
+        chartsVisible = false;
+      } else {
+        chartsContainer.classList.remove('hidden');
+        toggleBtn.textContent = '📉 إخفاء الرسوم البيانية';
+        chartsVisible = true;
+        setTimeout(drawCharts, 100); // Allow container to be visible first
+      }
+    }
+
+    function drawCharts() {
+      drawPaymentStatusChart();
+      drawMonthlyIncomeChart();
+      drawDebtAnalysisChart();
+    }
+
+    function drawPaymentStatusChart() {
+      const canvas = document.getElementById('payment-status-chart');
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const paidCount = allPayments.filter(p => p.payment_status === 'مدفوع').length;
+      const unpaidCount = referenceApartments.length - allPayments.length + allPayments.filter(p => p.payment_status === 'غير مدفوع').length;
+      const partialCount = allPayments.filter(p => p.payment_status === 'دفع جزئي').length;
+      
+      const data = [
+        { label: 'مدفوع', value: paidCount, color: '#10b981' },
+        { label: 'غير مدفوع', value: unpaidCount, color: '#ef4444' },
+        { label: 'دفع جزئي', value: partialCount, color: '#f59e0b' }
+      ];
+      
+      const total = data.reduce((sum, item) => sum + item.value, 0);
+      if (total === 0) return;
+      
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 20;
+      
+      let currentAngle = -Math.PI / 2;
+      
+      data.forEach(item => {
+        const sliceAngle = (item.value / total) * 2 * Math.PI;
+        
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fillStyle = item.color;
+        ctx.fill();
+        
+        currentAngle += sliceAngle;
+      });
+      
+      // Update legend
+      const legend = document.getElementById('payment-status-legend');
+      legend.innerHTML = data.map(item => `
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 rounded" style="background-color: ${item.color}"></div>
+          <span>${item.label}: ${item.value}</span>
+        </div>
+      `).join('');
+    }
+
+    function drawMonthlyIncomeChart() {
+      const canvas = document.getElementById('monthly-income-chart');
+      const ctx = canvas.getContext('2d');
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+      const monthlyData = months.map(month => {
+        return allPayments.filter(p => p.month === month).reduce((sum, p) => sum + (p.paid || 0), 0);
+      });
+      
+      const maxValue = Math.max(...monthlyData, 1);
+      const barWidth = canvas.width / months.length - 10;
+      const maxBarHeight = canvas.height - 40;
+      
+      monthlyData.forEach((value, index) => {
+        const barHeight = (value / maxValue) * maxBarHeight;
+        const x = index * (barWidth + 10) + 5;
+        const y = canvas.height - barHeight - 20;
+        
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillRect(x, y, barWidth, barHeight);
+        
+        // Draw value on top
+        ctx.fillStyle = '#374151';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(value.toFixed(0), x + barWidth / 2, y - 5);
+      });
+    }
+
+    function drawDebtAnalysisChart() {
+      const canvas = document.getElementById('debt-analysis-chart');
+      const ctx = canvas.getContext('2d');
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Group debts by type
+      const debtTypes = {};
+      allDebts.forEach(debt => {
+        if (!debtTypes[debt.debt_type]) {
+          debtTypes[debt.debt_type] = 0;
+        }
+        debtTypes[debt.debt_type] += debt.amount;
+      });
+      
+      const sortedDebts = Object.entries(debtTypes).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      
+      if (sortedDebts.length === 0) {
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('لا توجد مديونيات مسجلة', canvas.width / 2, canvas.height / 2);
+        return;
+      }
+      
+      const maxValue = Math.max(...sortedDebts.map(([, value]) => value), 1);
+      const barHeight = 25;
+      const barSpacing = 35;
+      
+      sortedDebts.forEach(([type, amount], index) => {
+        const barWidth = (amount / maxValue) * (canvas.width - 200);
+        const y = index * barSpacing + 20;
+        
+        // Draw bar
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(150, y, barWidth, barHeight);
+        
+        // Draw label
+        ctx.fillStyle = '#374151';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(type, 145, y + 17);
+        
+        // Draw value
+        ctx.textAlign = 'left';
+        ctx.fillText(amount.toFixed(2) + ' جنيه', 155 + barWidth, y + 17);
+      });
+    }
+
+    // Monthly Report
+    function generateMonthlyReport() {
+      const modal = document.getElementById('monthly-report-modal');
+      const content = document.getElementById('monthly-report-content');
+      
+      const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long' });
+      const currentYear = new Date().getFullYear();
+      
+      const monthlyPayments = allPayments.filter(p => p.month === currentMonth && p.year === currentYear);
+      const monthlyDebts = allDebts.filter(d => d.month === currentMonth && d.year === currentYear);
+      
+      const totalIncome = monthlyPayments.reduce((sum, p) => sum + (p.paid || 0), 0);
+      const totalExpected = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const totalDebts = monthlyDebts.reduce((sum, d) => sum + d.amount, 0);
+      
+      content.innerHTML = `
+        <div class="space-y-6">
+          <div class="text-center border-b pb-4">
+            <h4 class="text-xl font-bold">تقرير شهر ${currentMonth} ${currentYear}</h4>
+            <p class="text-gray-600">تم إنشاؤه في ${new Date().toLocaleDateString('ar-EG')}</p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+              <div class="text-green-600 text-2xl mb-2">💰</div>
+              <div class="text-green-800 font-semibold">إجمالي المحصل</div>
+              <div class="text-2xl font-bold text-green-600">${totalIncome.toFixed(2)} جنيه</div>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+              <div class="text-blue-600 text-2xl mb-2">📊</div>
+              <div class="text-blue-800 font-semibold">المبلغ المتوقع</div>
+              <div class="text-2xl font-bold text-blue-600">${totalExpected.toFixed(2)} جنيه</div>
+            </div>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+              <div class="text-red-600 text-2xl mb-2">📋</div>
+              <div class="text-red-800 font-semibold">إجمالي الديون</div>
+              <div class="text-2xl font-bold text-red-600">${totalDebts.toFixed(2)} جنيه</div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h5 class="text-lg font-semibold mb-3">📈 المدفوعات هذا الشهر</h5>
+              <div class="space-y-2 max-h-60 overflow-y-auto">
+                ${monthlyPayments.length > 0 ? monthlyPayments.map(payment => `
+                  <div class="bg-gray-50 rounded p-3 text-sm">
+                    <div class="font-semibold">${payment.resident_name} - شقة ${payment.apartment_number}</div>
+                    <div class="text-gray-600">${payment.payment_type}: ${payment.paid.toFixed(2)} جنيه</div>
+                    <div class="text-xs text-gray-500">${payment.payment_method || 'غير محدد'}</div>
+                  </div>
+                `).join('') : '<p class="text-gray-500 text-center py-4">لا توجد مدفوعات هذا الشهر</p>'}
+              </div>
+            </div>
+            
+            <div>
+              <h5 class="text-lg font-semibold mb-3">📋 المديونيات المسجلة</h5>
+              <div class="space-y-2 max-h-60 overflow-y-auto">
+                ${monthlyDebts.length > 0 ? monthlyDebts.map(debt => `
+                  <div class="bg-red-50 rounded p-3 text-sm">
+                    <div class="font-semibold">${debt.resident_name} - شقة ${debt.apartment_number}</div>
+                    <div class="text-gray-600">${debt.debt_type}: ${debt.amount.toFixed(2)} جنيه</div>
+                    <div class="text-xs text-gray-500">استحقاق: ${new Date(debt.due_date).toLocaleDateString('ar-EG')}</div>
+                  </div>
+                `).join('') : '<p class="text-gray-500 text-center py-4">لا توجد مديونيات مسجلة هذا الشهر</p>'}
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h5 class="text-lg font-semibold mb-3">📊 ملخص الأداء</h5>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>نسبة التحصيل: <strong>${totalExpected > 0 ? ((totalIncome / totalExpected) * 100).toFixed(1) : 0}%</strong></div>
+              <div>عدد المدفوعات: <strong>${monthlyPayments.length}</strong></div>
+              <div>عدد المديونيات: <strong>${monthlyDebts.length}</strong></div>
+              <div>متوسط الدفعة: <strong>${monthlyPayments.length > 0 ? (totalIncome / monthlyPayments.length).toFixed(2) : 0} جنيه</strong></div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      modal.classList.add('active');
+    }
+
+    function setupEventListeners() {
+      // Monthly maintenance receipt listeners
+      document.getElementById('monthly-batch-btn').addEventListener('click', () => {
+        document.getElementById('monthly-batch-form').reset();
+        document.getElementById('batch-year-input').value = '2025';
+        const occupiedApartments = referenceApartments.filter(a => a.status === 'ساكنة');
+        document.getElementById('batch-apartments-count').textContent = occupiedApartments.length;
+        
+        // Populate apartments list with amount inputs
+        const apartmentsList = document.getElementById('apartments-amounts-list');
+        apartmentsList.innerHTML = occupiedApartments.map(apt => `
+          <div class="bg-white border border-gray-200 rounded-lg p-3 grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+            <div class="md:col-span-1">
+              <div class="font-semibold text-gray-800">${apt.resident}</div>
+              <div class="text-sm text-gray-600">شقة ${apt.number} - ${apt.floor}</div>
+            </div>
+            <div>
+              <label class="text-xs text-gray-600 block mb-1">المبلغ المطلوب</label>
+              <input type="number" 
+                     id="apt-amount-${apt.id}" 
+                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm" 
+                     placeholder="0.00" 
+                     min="0" 
+                     step="0.01"
+                     value="0">
+            </div>
+            <div>
+              <label class="text-xs text-gray-600 block mb-1">المبلغ المدفوع</label>
+              <input type="number" 
+                     id="apt-paid-${apt.id}" 
+                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm" 
+                     placeholder="0.00" 
+                     min="0" 
+                     step="0.01"
+                     value="0">
+            </div>
+            <div>
+              <label class="text-xs text-gray-600 block mb-1">حالة السداد</label>
+              <select id="apt-status-${apt.id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                <option value="غير مدفوع">❌ غير مدفوع</option>
+                <option value="مدفوع">✅ مدفوع</option>
+                <option value="دفع جزئي">⚠️ دفع جزئي</option>
+              </select>
+            </div>
+          </div>
+        `).join('');
+        
+        document.getElementById('monthly-batch-modal').classList.add('active');
+      });
+      
+      document.getElementById('batch-cancel-btn').addEventListener('click', () => {
+        document.getElementById('monthly-batch-modal').classList.remove('active');
+      });
+      
+      document.getElementById('monthly-batch-form').addEventListener('submit', handleMonthlyMaintenanceSubmit);
+      
+      // Print receipts listeners
+      document.getElementById('print-receipts-btn').addEventListener('click', () => {
+        document.getElementById('print-receipts-form').reset();
+        document.getElementById('receipts-year-input').value = '2025';
+        document.getElementById('print-receipts-modal').classList.add('active');
+      });
+      
+      document.getElementById('receipts-cancel-btn').addEventListener('click', () => {
+        document.getElementById('print-receipts-modal').classList.remove('active');
+      });
+      
+      document.getElementById('print-receipts-form').addEventListener('submit', handlePrintReceipts);
+      
+      // Existing event listeners
+      document.getElementById('add-debt-btn').addEventListener('click', () => {
+        document.getElementById('debt-form').reset();
+        document.getElementById('debt-year-input').value = '2025';
+        const today = new Date();
+        document.getElementById('debt-due-date-input').value = today.toISOString().split('T')[0];
+        document.getElementById('debt-modal').classList.add('active');
+      });
+      
+      document.getElementById('add-payment-btn').addEventListener('click', () => {
+        currentEditingPayment = null;
+        document.getElementById('modal-title').textContent = 'إضافة دفعة جديدة';
+        document.getElementById('payment-form').reset();
+        document.getElementById('year-input').value = '2025';
+        document.getElementById('payment-modal').classList.add('active');
+      });
+      
+      document.getElementById('cancel-btn').addEventListener('click', () => {
+        document.getElementById('payment-modal').classList.remove('active');
+      });
+      
+      document.getElementById('debt-cancel-btn').addEventListener('click', () => {
+        document.getElementById('debt-modal').classList.remove('active');
+      });
+      
+      document.getElementById('apt-cancel-btn').addEventListener('click', () => {
+        document.getElementById('apartment-modal').classList.remove('active');
+      });
+      
+      document.getElementById('payment-form').addEventListener('submit', handleFormSubmit);
+      document.getElementById('debt-form').addEventListener('submit', handleDebtFormSubmit);
+      document.getElementById('apartment-form').addEventListener('submit', handleApartmentFormSubmit);
+      
+      // Enhanced filter event listeners
+      document.getElementById('search-name').addEventListener('input', applyFilters);
+      document.getElementById('filter-type').addEventListener('change', applyFilters);
+      document.getElementById('filter-payment').addEventListener('change', applyFilters);
+      document.getElementById('filter-floor').addEventListener('change', applyFilters);
+      document.getElementById('filter-month').addEventListener('change', applyFilters);
+      document.getElementById('filter-year').addEventListener('change', applyFilters);
+      document.getElementById('filter-payment-type').addEventListener('change', applyFilters);
+      document.getElementById('clear-filters').addEventListener('click', clearFilters);
+      
+      // Export and print listeners
+      document.getElementById('export-btn').addEventListener('click', exportToExcel);
+      document.getElementById('print-btn').addEventListener('click', printReport);
+      document.getElementById('backup-btn').addEventListener('click', () => {
+        document.getElementById('backup-modal').classList.add('active');
+      });
+      document.getElementById('close-backup-modal').addEventListener('click', () => {
+        document.getElementById('backup-modal').classList.remove('active');
+      });
+      
+      // Backup listeners
+      document.getElementById('download-backup').addEventListener('click', downloadBackup);
+      document.getElementById('restore-file').addEventListener('change', handleFileSelect);
+      document.getElementById('restore-backup').addEventListener('click', restoreBackup);
+      
+      // New advanced features listeners
+      document.getElementById('toggle-charts').addEventListener('click', toggleCharts);
+      document.getElementById('monthly-report-btn').addEventListener('click', generateMonthlyReport);
+      document.getElementById('yearly-report-btn').addEventListener('click', generateYearlyReport);
+      document.getElementById('clear-notifications').addEventListener('click', clearAllNotifications);
+      
+      // Monthly report modal listeners
+      document.getElementById('close-monthly-report').addEventListener('click', () => {
+        document.getElementById('monthly-report-modal').classList.remove('active');
+      });
+      
+      document.getElementById('export-monthly-report').addEventListener('click', exportMonthlyReport);
+    }
+
+    function clearFilters() {
+      document.getElementById('search-name').value = '';
+      document.getElementById('filter-type').value = '';
+      document.getElementById('filter-payment').value = '';
+      document.getElementById('filter-floor').value = '';
+      document.getElementById('filter-month').value = '';
+      document.getElementById('filter-year').value = '';
+      document.getElementById('filter-payment-type').value = '';
+      applyFilters();
+    }
+
+    function generateYearlyReport() {
+      // Similar to monthly report but for the entire year
+      showMessage('تقرير سنوي قيد التطوير', 'info');
+    }
+
+    function exportMonthlyReport() {
+      try {
+        const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long' });
+        const currentYear = new Date().getFullYear();
+        
+        const monthlyPayments = allPayments.filter(p => p.month === currentMonth && p.year === currentYear);
+        const monthlyDebts = allDebts.filter(d => d.month === currentMonth && d.year === currentYear);
+        
+        const totalIncome = monthlyPayments.reduce((sum, p) => sum + (p.paid || 0), 0);
+        const totalExpected = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const totalDebts = monthlyDebts.reduce((sum, d) => sum + d.amount, 0);
+        const collectionRate = totalExpected > 0 ? ((totalIncome / totalExpected) * 100).toFixed(1) : 0;
+        
+        let csvContent = `نظام إدارة العقار المتقدم - التقرير الشهري\n`;
+        csvContent += `شهر ${currentMonth} ${currentYear}\n`;
+        csvContent += `تاريخ إنشاء التقرير: ${new Date().toLocaleDateString('ar-EG')} ${new Date().toLocaleTimeString('ar-EG')}\n\n`;
+        
+        // الإحصائيات الشهرية
+        csvContent += `الإحصائيات الشهرية:\n`;
+        csvContent += `نوع البيان,القيمة\n`;
+        csvContent += `إجمالي المحصل,${totalIncome.toFixed(2)} جنيه\n`;
+        csvContent += `إجمالي المتوقع,${totalExpected.toFixed(2)} جنيه\n`;
+        csvContent += `إجمالي الديون المسجلة,${totalDebts.toFixed(2)} جنيه\n`;
+        csvContent += `نسبة التحصيل,${collectionRate}%\n`;
+        csvContent += `عدد المدفوعات,${monthlyPayments.length}\n`;
+        csvContent += `عدد المديونيات المسجلة,${monthlyDebts.length}\n\n`;
+        
+        // تفاصيل المدفوعات
+        if (monthlyPayments.length > 0) {
+          csvContent += `تفاصيل المدفوعات الشهرية:\n`;
+          csvContent += `م,الساكن,رقم الشقة,الدور,نوع الدفعة,المبلغ المطلوب,المبلغ المدفوع,المتبقي,حالة السداد,طريقة الدفع,ملاحظات,تاريخ الإنشاء\n`;
+          
+          monthlyPayments.forEach((payment, index) => {
+            const remaining = (payment.amount || 0) - (payment.paid || 0);
+            const row = [
+              index + 1,
+              payment.resident_name,
+              payment.apartment_number,
+              payment.floor,
+              payment.payment_type,
+              (payment.amount || 0).toFixed(2),
+              (payment.paid || 0).toFixed(2),
+              remaining.toFixed(2),
+              payment.payment_status,
+              payment.payment_method || 'غير محدد',
+              payment.notes || 'لا توجد ملاحظات',
+              payment.created_at ? new Date(payment.created_at).toLocaleDateString('ar-EG') : 'غير محدد'
+            ].map(field => `"${field}"`).join(',');
+            
+            csvContent += row + "\n";
+          });
+          csvContent += "\n";
+        }
+        
+        // تفاصيل المديونيات
+        if (monthlyDebts.length > 0) {
+          csvContent += `المديونيات المسجلة هذا الشهر:\n`;
+          csvContent += `م,الساكن,رقم الشقة,نوع المديونية,الوصف,المبلغ,تاريخ الاستحقاق,الحالة,ملاحظات,تاريخ التسجيل\n`;
+          
+          monthlyDebts.forEach((debt, index) => {
+            const row = [
+              index + 1,
+              debt.resident_name,
+              debt.apartment_number,
+              debt.debt_type,
+              debt.description,
+              debt.amount.toFixed(2),
+              new Date(debt.due_date).toLocaleDateString('ar-EG'),
+              debt.status || 'مستحقة',
+              debt.notes || 'لا توجد ملاحظات',
+              debt.created_at ? new Date(debt.created_at).toLocaleDateString('ar-EG') : 'غير محدد'
+            ].map(field => `"${field}"`).join(',');
+            
+            csvContent += row + "\n";
+          });
+          csvContent += "\n";
+        }
+        
+        // تحليل الأداء
+        csvContent += `تحليل الأداء الشهري:\n`;
+        csvContent += `المؤشر,القيمة\n`;
+        csvContent += `متوسط الدفعة,${monthlyPayments.length > 0 ? (totalIncome / monthlyPayments.length).toFixed(2) : 0} جنيه\n`;
+        csvContent += `أعلى دفعة,${monthlyPayments.length > 0 ? Math.max(...monthlyPayments.map(p => p.paid || 0)).toFixed(2) : 0} جنيه\n`;
+        csvContent += `أقل دفعة,${monthlyPayments.length > 0 ? Math.min(...monthlyPayments.map(p => p.paid || 0)).toFixed(2) : 0} جنيه\n`;
+        csvContent += `الشقق المدفوعة بالكامل,${monthlyPayments.filter(p => p.payment_status === 'مدفوع').length}\n`;
+        csvContent += `الشقق غير المدفوعة,${monthlyPayments.filter(p => p.payment_status === 'غير مدفوع').length}\n`;
+        csvContent += `الشقق بدفع جزئي,${monthlyPayments.filter(p => p.payment_status === 'دفع جزئي').length}\n\n`;
+        
+        // ملخص نهائي
+        csvContent += `ملخص التقرير:\n`;
+        csvContent += `تم إنشاء هذا التقرير الشهري في: ${new Date().toLocaleDateString('ar-EG')} الساعة ${new Date().toLocaleTimeString('ar-EG')}\n`;
+        csvContent += `الفترة المشمولة: شهر ${currentMonth} ${currentYear}\n`;
+        csvContent += `نظام إدارة العقار المتقدم - الإصدار 2.1\n`;
+        
+        // إنشاء الملف وتحميله
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        const fileName = `تقرير_شهري_${currentMonth}_${currentYear}_${new Date().getHours()}-${new Date().getMinutes()}.csv`;
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // تنظيف الذاكرة
+        URL.revokeObjectURL(url);
+        
+        showMessage(`تم تصدير التقرير الشهري بنجاح: ${fileName}`, 'success');
+        
+      } catch (error) {
+        console.error('خطأ في تصدير التقرير الشهري:', error);
+        showMessage('حدث خطأ أثناء تصدير التقرير الشهري', 'error');
+      }
+    }
+
+    // إضافة وظائف تحسين إضافية
+    function validateBackupData(data) {
+      // التحقق من صحة بيانات النسخة الاحتياطية
+      if (!data || typeof data !== 'object') {
+        throw new Error('بيانات النسخة الاحتياطية غير صحيحة');
+      }
+      
+      if (!data.version) {
+        throw new Error('رقم إصدار النسخة الاحتياطية مفقود');
+      }
+      
+      // التحقق من وجود البيانات الأساسية
+      const hasData = data.data || (data.payments || data.debts || data.apartments);
+      if (!hasData) {
+        throw new Error('لا توجد بيانات صحيحة في النسخة الاحتياطية');
+      }
+      
+      return true;
+    }
+
+    function createAdvancedBackup() {
+      // إنشاء نسخة احتياطية متقدمة مع تشفير أساسي
+      const backupData = {
+        version: "2.1",
+        app_name: "نظام إدارة العقار المتقدم",
+        timestamp: new Date().toISOString(),
+        backup_date: new Date().toLocaleDateString('ar-EG'),
+        backup_time: new Date().toLocaleTimeString('ar-EG'),
+        checksum: generateChecksum(),
+        metadata: {
+          total_apartments: referenceApartments.length,
+          total_payments: allPayments.length,
+          total_debts: allDebts.length,
+          last_payment_date: allPayments.length > 0 ? Math.max(...allPayments.map(p => new Date(p.created_at || 0).getTime())) : null,
+          last_debt_date: allDebts.length > 0 ? Math.max(...allDebts.map(d => new Date(d.created_at || 0).getTime())) : null
+        },
+        data: {
+          payments: allPayments,
+          debts: allDebts,
+          apartments: referenceApartments,
+          notifications: notifications
+        },
+        statistics: {
+          total_paid: allPayments.reduce((sum, p) => sum + (p.paid || 0), 0),
+          total_debt: allDebts.reduce((sum, d) => sum + d.amount, 0),
+          collection_rate: allPayments.reduce((sum, p) => sum + (p.amount || 0), 0) > 0 ? 
+            ((allPayments.reduce((sum, p) => sum + (p.paid || 0), 0) / allPayments.reduce((sum, p) => sum + (p.amount || 0), 0)) * 100).toFixed(1) : 0
+        }
+      };
+      
+      return backupData;
+    }
+
+    function generateChecksum() {
+      // إنشاء checksum بسيط للتحقق من سلامة البيانات
+      const dataString = JSON.stringify({
+        apartments: referenceApartments.length,
+        payments: allPayments.length,
+        debts: allDebts.length,
+        timestamp: Date.now()
+      });
+      
+      let hash = 0;
+      for (let i = 0; i < dataString.length; i++) {
+        const char = dataString.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      
+      return Math.abs(hash).toString(16);
+    }
+
+    function exportToExcel() {
+      try {
+        // إنشاء محتوى CSV محسن مع معلومات شاملة
+        let csvContent = '';
+        
+        // إضافة رأس التقرير
+        csvContent += `نظام إدارة العقار المتقدم\n`;
+        csvContent += `تقرير شامل - تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')} ${new Date().toLocaleTimeString('ar-EG')}\n`;
+        csvContent += `عدد الشقق المعروضة: ${filteredApartments.length} من أصل ${referenceApartments.length}\n\n`;
+        
+        // إضافة الإحصائيات العامة
+        const totalPaid = allPayments.reduce((sum, p) => sum + (p.paid || 0), 0);
+        const totalAmount = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const totalDebt = allDebts.reduce((sum, d) => sum + d.amount, 0);
+        const collectionRate = totalAmount > 0 ? ((totalPaid / totalAmount) * 100).toFixed(1) : 0;
+        
+        csvContent += `الإحصائيات العامة:\n`;
+        csvContent += `إجمالي المحصل,${totalPaid.toFixed(2)} جنيه\n`;
+        csvContent += `إجمالي المطلوب,${totalAmount.toFixed(2)} جنيه\n`;
+        csvContent += `إجمالي الديون,${totalDebt.toFixed(2)} جنيه\n`;
+        csvContent += `نسبة التحصيل,${collectionRate}%\n\n`;
+        
+        // إضافة تفاصيل الشقق
+        csvContent += `تفاصيل الشقق:\n`;
+        csvContent += `م,الدور,رقم الشقة,مكان الشقة,اسم الساكن,حالة الشقة,نوع الساكن,المبلغ المطلوب,المبلغ المدفوع,المتبقي,حالة السداد,إجمالي الديون,نوع الدفعة,الشهر,السنة,طريقة الدفع,ملاحظات,تاريخ الإنشاء,تاريخ التحديث\n`;
+        
+        filteredApartments.forEach(apt => {
+          const payment = allPayments.find(p => p.apartment_id === apt.id);
+          const amount = payment?.amount || 0;
+          const paid = payment?.paid || 0;
+          const remaining = amount - paid;
+          const registeredDebt = allDebts.filter(d => d.apartment_id === apt.id).reduce((sum, d) => sum + d.amount, 0);
+          const totalApartmentDebt = remaining + registeredDebt;
+          
+          const row = [
+            apt.id,
+            apt.floor,
+            apt.number,
+            apt.location,
+            apt.resident,
+            apt.status,
+            apt.type,
+            amount.toFixed(2),
+            paid.toFixed(2),
+            remaining.toFixed(2),
+            payment?.payment_status || 'غير محدد',
+            totalApartmentDebt.toFixed(2),
+            payment?.payment_type || 'غير محدد',
+            payment?.month || 'غير محدد',
+            payment?.year || 'غير محدد',
+            payment?.payment_method || 'غير محدد',
+            payment?.notes || 'لا توجد ملاحظات',
+            payment?.created_at ? new Date(payment.created_at).toLocaleDateString('ar-EG') : 'غير محدد',
+            payment?.updated_at ? new Date(payment.updated_at).toLocaleDateString('ar-EG') : 'غير محدد'
+          ].map(field => `"${field}"`).join(',');
+          
+          csvContent += row + "\n";
+        });
+        
+        // إضافة تفاصيل المديونيات إذا وجدت
+        if (allDebts.length > 0) {
+          csvContent += `\nتفاصيل المديونيات:\n`;
+          csvContent += `م,رقم الشقة,اسم الساكن,نوع المديونية,الوصف,المبلغ,تاريخ الاستحقاق,الشهر,السنة,الحالة,ملاحظات,تاريخ التسجيل\n`;
+          
+          allDebts.forEach((debt, index) => {
+            const row = [
+              index + 1,
+              debt.apartment_number,
+              debt.resident_name,
+              debt.debt_type,
+              debt.description,
+              debt.amount.toFixed(2),
+              new Date(debt.due_date).toLocaleDateString('ar-EG'),
+              debt.month,
+              debt.year,
+              debt.status || 'مستحقة',
+              debt.notes || 'لا توجد ملاحظات',
+              debt.created_at ? new Date(debt.created_at).toLocaleDateString('ar-EG') : 'غير محدد'
+            ].map(field => `"${field}"`).join(',');
+            
+            csvContent += row + "\n";
+          });
+        }
+        
+        // إضافة ملخص نهائي
+        csvContent += `\nملخص التقرير:\n`;
+        csvContent += `تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString('ar-EG')} الساعة ${new Date().toLocaleTimeString('ar-EG')}\n`;
+        csvContent += `إجمالي الشقق: ${referenceApartments.length}\n`;
+        csvContent += `الشقق المعروضة: ${filteredApartments.length}\n`;
+        csvContent += `إجمالي المدفوعات: ${allPayments.length}\n`;
+        csvContent += `إجمالي المديونيات: ${allDebts.length}\n`;
+        csvContent += `نظام إدارة العقار المتقدم - الإصدار 2.1\n`;
+        
+        // إنشاء الملف وتحميله
+        const blob = new Blob(['\ufeff' + csvContent], { 
+          type: 'text/csv;charset=utf-8;' 
+        });
+        
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        const fileName = `تقرير_العقار_المتقدم_${new Date().toISOString().split('T')[0]}_${new Date().getHours()}-${new Date().getMinutes()}.csv`;
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // تنظيف الذاكرة
+        URL.revokeObjectURL(url);
+        
+        showMessage(`تم تصدير التقرير بنجاح: ${fileName}`, 'success');
+        
+      } catch (error) {
+        console.error('خطأ في تصدير التقرير:', error);
+        showMessage('حدث خطأ أثناء تصدير التقرير', 'error');
+      }
+    }
+
+    function printReport() {
+      const printWindow = window.open('', '_blank');
+      const printContent = `
+        <!DOCTYPE html>
+        <html dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>تقرير إدارة العقار المتقدم</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .header h1 { color: #333; margin-bottom: 10px; }
+            .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+            .stat-box { text-align: center; padding: 15px; border: 2px solid #ddd; border-radius: 8px; background: #f9f9f9; }
+            .stat-box h3 { margin: 0 0 10px 0; color: #555; }
+            .stat-box .value { font-size: 24px; font-weight: bold; color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 12px; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+            @media print { body { margin: 0; } .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏢 نظام إدارة العقار المتقدم</h1>
+            <h2>تقرير شامل - عام 2025 م</h2>
+            <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-EG')} - ${new Date().toLocaleTimeString('ar-EG')}</p>
+          </div>
+          
+          <div class="stats">
+            <div class="stat-box">
+              <h3>إجمالي الشقق</h3>
+              <div class="value">${filteredApartments.length}</div>
+            </div>
+            <div class="stat-box">
+              <h3>المبلغ المحصل</h3>
+              <div class="value">${allPayments.reduce((sum, p) => sum + (p.paid || 0), 0).toFixed(2)} جنيه</div>
+            </div>
+            <div class="stat-box">
+              <h3>إجمالي الديون</h3>
+              <div class="value">${(allPayments.reduce((sum, p) => sum + ((p.amount || 0) - (p.paid || 0)), 0) + allDebts.reduce((sum, d) => sum + d.amount, 0)).toFixed(2)} جنيه</div>
+            </div>
+            <div class="stat-box">
+              <h3>نسبة التحصيل</h3>
+              <div class="value">${allPayments.reduce((sum, p) => sum + (p.amount || 0), 0) > 0 ? ((allPayments.reduce((sum, p) => sum + (p.paid || 0), 0) / allPayments.reduce((sum, p) => sum + (p.amount || 0), 0)) * 100).toFixed(1) : 0}%</div>
+            </div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>م</th><th>الدور</th><th>رقم الشقة</th><th>مكان الشقة</th>
+                <th>اسم الساكن</th><th>حالة الشقة</th><th>نوع الساكن</th>
+                <th>المبلغ</th><th>دفع</th><th>حالة السداد</th><th>ديون</th>
+                <th>نوع الدفعة</th><th>ملاحظات</th><th>طريقة الدفع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredApartments.map(apt => {
+                const payment = allPayments.find(p => p.apartment_id === apt.id);
+                const amount = payment?.amount || 0;
+                const paid = payment?.paid || 0;
+                const paymentDebt = amount - paid;
+                const registeredDebt = allDebts.filter(d => d.apartment_id === apt.id).reduce((sum, d) => sum + d.amount, 0);
+                const debt = paymentDebt + registeredDebt;
+                
+                return `
+                  <tr>
+                    <td>${apt.id}</td>
+                    <td>${apt.floor}</td>
+                    <td>${apt.number}</td>
+                    <td>${apt.location}</td>
+                    <td>${apt.resident}</td>
+                    <td>${apt.status}</td>
+                    <td>${apt.type}</td>
+                    <td>${amount.toFixed(2)}</td>
+                    <td>${paid.toFixed(2)}</td>
+                    <td>${payment?.payment_status || '-'}</td>
+                    <td>${debt.toFixed(2)}</td>
+                    <td>${payment?.payment_type || '-'}</td>
+                    <td>${payment?.notes || '-'}</td>
+                    <td>${payment?.payment_method || '-'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <p>تم إنشاء هذا التقرير بواسطة نظام إدارة العقار المتقدم</p>
+            <p>جميع الحقوق محفوظة © 2025</p>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      
+      showMessage('تم فتح نافذة الطباعة', 'success');
+    }
+
+    // Enhanced Backup Functions
+    function downloadBackup() {
+      try {
+        // إنشاء بيانات النسخة الاحتياطية مع معلومات شاملة
+        const backupData = {
+          version: "2.1",
+          app_name: "نظام إدارة العقار المتقدم",
+          timestamp: new Date().toISOString(),
+          backup_date: new Date().toLocaleDateString('ar-EG'),
+          backup_time: new Date().toLocaleTimeString('ar-EG'),
+          total_apartments: referenceApartments.length,
+          total_payments: allPayments.length,
+          total_debts: allDebts.length,
+          data: {
+            payments: allPayments,
+            debts: allDebts,
+            apartments: referenceApartments,
+            notifications: notifications
+          },
+          statistics: {
+            total_paid: allPayments.reduce((sum, p) => sum + (p.paid || 0), 0),
+            total_debt: allDebts.reduce((sum, d) => sum + d.amount, 0),
+            collection_rate: allPayments.reduce((sum, p) => sum + (p.amount || 0), 0) > 0 ? 
+              ((allPayments.reduce((sum, p) => sum + (p.paid || 0), 0) / allPayments.reduce((sum, p) => sum + (p.amount || 0), 0)) * 100).toFixed(1) : 0
+          }
+        };
+        
+        // تحويل البيانات إلى JSON مع تنسيق جميل
+        const jsonString = JSON.stringify(backupData, null, 2);
+        
+        // إنشاء الملف وتحميله
+        const blob = new Blob(['\ufeff' + jsonString], { 
+          type: 'application/json;charset=utf-8' 
+        });
+        
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        const fileName = `نسخة_احتياطية_العقار_${new Date().toISOString().split('T')[0]}_${new Date().getHours()}-${new Date().getMinutes()}.json`;
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // تنظيف الذاكرة
+        URL.revokeObjectURL(url);
+        
+        showMessage(`تم تحميل النسخة الاحتياطية بنجاح: ${fileName}`, 'success');
+        
+        // إغلاق النافذة المنبثقة
+        setTimeout(() => {
+          document.getElementById('backup-modal').classList.remove('active');
+        }, 1500);
+        
+      } catch (error) {
+        console.error('خطأ في إنشاء النسخة الاحتياطية:', error);
+        showMessage('حدث خطأ أثناء إنشاء النسخة الاحتياطية', 'error');
+      }
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      const restoreBtn = document.getElementById('restore-backup');
+      const fileLabel = document.querySelector('label[for="restore-file"]');
+      
+      if (file) {
+        // التحقق من نوع الملف
+        if (!file.name.toLowerCase().endsWith('.json')) {
+          showMessage('يرجى اختيار ملف JSON صحيح', 'error');
+          event.target.value = '';
+          return;
+        }
+        
+        // التحقق من حجم الملف (أقل من 10 ميجابايت)
+        if (file.size > 10 * 1024 * 1024) {
+          showMessage('حجم الملف كبير جداً (أكثر من 10 ميجابايت)', 'error');
+          event.target.value = '';
+          return;
+        }
+        
+        // عرض معلومات الملف
+        fileLabel.textContent = `📁 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        fileLabel.style.backgroundColor = '#10b981';
+        restoreBtn.style.display = 'inline-block';
+        
+        // قراءة معاينة سريعة للملف
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const previewData = JSON.parse(e.target.result);
+            if (previewData.version && previewData.data) {
+              fileLabel.innerHTML = `✅ ${file.name}<br><small>الإصدار: ${previewData.version} | التاريخ: ${previewData.backup_date || 'غير محدد'}</small>`;
+            }
+          } catch (error) {
+            fileLabel.textContent = `⚠️ ${file.name} (قد يحتوي على أخطاء)`;
+            fileLabel.style.backgroundColor = '#f59e0b';
+          }
+        };
+        reader.readAsText(file);
+        
+      } else {
+        fileLabel.textContent = '📤 اختر ملف الاستعادة';
+        fileLabel.style.backgroundColor = '#007bff';
+        restoreBtn.style.display = 'none';
+      }
+    }
+
+    function restoreBackup() {
+      const fileInput = document.getElementById('restore-file');
+      const file = fileInput.files[0];
+      const restoreBtn = document.getElementById('restore-backup');
+      
+      if (!file) {
+        showMessage('يرجى اختيار ملف للاستعادة', 'error');
+        return;
+      }
+      
+      // تعطيل الزر أثناء المعالجة
+      restoreBtn.disabled = true;
+      restoreBtn.textContent = '🔄 جاري الاستعادة...';
+      restoreBtn.style.backgroundColor = '#6b7280';
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const backupData = JSON.parse(e.target.result);
+          
+          // التحقق من صحة البيانات
+          if (!backupData.version) {
+            throw new Error('ملف النسخة الاحتياطية غير صحيح - لا يحتوي على رقم إصدار');
+          }
+          
+          // عرض معلومات النسخة الاحتياطية
+          const backupInfo = `
+            📋 معلومات النسخة الاحتياطية:
+            • الإصدار: ${backupData.version}
+            • التاريخ: ${backupData.backup_date || 'غير محدد'}
+            • الوقت: ${backupData.backup_time || 'غير محدد'}
+            • عدد الشقق: ${backupData.total_apartments || 0}
+            • عدد المدفوعات: ${backupData.total_payments || 0}
+            • عدد المديونيات: ${backupData.total_debts || 0}
+          `;
+          
+          // تأكيد الاستعادة
+          const confirmRestore = confirm(`هل تريد استعادة البيانات؟\n\n${backupInfo}\n\n⚠️ تحذير: سيتم استبدال جميع البيانات الحالية!`);
+          
+          if (!confirmRestore) {
+            restoreBtn.disabled = false;
+            restoreBtn.textContent = '🔄 استعادة البيانات';
+            restoreBtn.style.backgroundColor = '#ea580c';
+            return;
+          }
+          
+          // استعادة البيانات
+          let restoredCount = 0;
+          
+          if (backupData.data) {
+            // الإصدار الجديد (2.1+)
+            if (backupData.data.payments && Array.isArray(backupData.data.payments)) {
+              allPayments = backupData.data.payments;
+              restoredCount++;
+            }
+            if (backupData.data.debts && Array.isArray(backupData.data.debts)) {
+              allDebts = backupData.data.debts;
+              restoredCount++;
+            }
+            if (backupData.data.apartments && Array.isArray(backupData.data.apartments)) {
+              referenceApartments = backupData.data.apartments;
+              filteredApartments = [...referenceApartments];
+              restoredCount++;
+            }
+            if (backupData.data.notifications && Array.isArray(backupData.data.notifications)) {
+              notifications = backupData.data.notifications;
+              restoredCount++;
+            }
+          } else {
+            // الإصدار القديم (2.0)
+            if (backupData.payments && Array.isArray(backupData.payments)) {
+              allPayments = backupData.payments;
+              restoredCount++;
+            }
+            if (backupData.debts && Array.isArray(backupData.debts)) {
+              allDebts = backupData.debts;
+              restoredCount++;
+            }
+            if (backupData.apartments && Array.isArray(backupData.apartments)) {
+              referenceApartments = backupData.apartments;
+              filteredApartments = [...referenceApartments];
+              restoredCount++;
+            }
+            if (backupData.notifications && Array.isArray(backupData.notifications)) {
+              notifications = backupData.notifications;
+              restoredCount++;
+            }
+          }
+          
+          if (restoredCount === 0) {
+            throw new Error('لم يتم العثور على بيانات صحيحة في الملف');
+          }
+          
+          // حفظ البيانات المستعادة
+          saveToLocalStorage();
+          
+          // تحديث الواجهة
+          populateApartmentSelect();
+          populateFloorFilter();
+          applyFilters();
+          updateStatistics();
+          updateNotificationsDisplay();
+          
+          // رسالة نجاح
+          showMessage(`تم استعادة البيانات بنجاح! (${restoredCount} مجموعات بيانات)`, 'success');
+          
+          // إغلاق النافذة
+          setTimeout(() => {
+            document.getElementById('backup-modal').classList.remove('active');
+          }, 2000);
+          
+          // إعادة تعيين النموذج
+          fileInput.value = '';
+          document.querySelector('label[for="restore-file"]').textContent = '📤 اختر ملف الاستعادة';
+          document.querySelector('label[for="restore-file"]').style.backgroundColor = '#007bff';
+          
+        } catch (error) {
+          console.error('خطأ في استعادة النسخة الاحتياطية:', error);
+          showMessage(`خطأ في قراءة ملف النسخة الاحتياطية: ${error.message}`, 'error');
+        } finally {
+          // إعادة تفعيل الزر
+          restoreBtn.disabled = false;
+          restoreBtn.textContent = '🔄 استعادة البيانات';
+          restoreBtn.style.backgroundColor = '#ea580c';
+        }
+      };
+      
+      reader.onerror = function() {
+        showMessage('خطأ في قراءة الملف', 'error');
+        restoreBtn.disabled = false;
+        restoreBtn.textContent = '🔄 استعادة البيانات';
+        restoreBtn.style.backgroundColor = '#ea580c';
+      };
+      
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    // Monthly Maintenance Receipt Handler
+    function handleMonthlyMaintenanceSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('batch-submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري المعالجة...';
+      
+      const month = document.getElementById('batch-month-input').value;
+      const year = parseInt(document.getElementById('batch-year-input').value);
+      
+      let addedCount = 0;
+      let debtCount = 0;
+      const timestamp = new Date().toISOString();
+      
+      // Get occupied apartments
+      const occupiedApartments = referenceApartments.filter(a => a.status === 'ساكنة');
+      
+      occupiedApartments.forEach(apartment => {
+        const amountInput = document.getElementById(`apt-amount-${apartment.id}`);
+        const paidInput = document.getElementById(`apt-paid-${apartment.id}`);
+        const statusSelect = document.getElementById(`apt-status-${apartment.id}`);
+        
+        if (!amountInput || !paidInput || !statusSelect) return;
+        
+        const amount = parseFloat(amountInput.value) || 0;
+        const paid = parseFloat(paidInput.value) || 0;
+        const paymentStatus = statusSelect.value;
+        
+        // Skip if amount is 0
+        if (amount === 0) return;
+        
+        // Check if payment already exists for this month/year
+        const existingPaymentIndex = allPayments.findIndex(p => 
+          p.apartment_id === apartment.id && 
+          p.month === month && 
+          p.year === year &&
+          p.payment_type === 'صيانة شهرية'
+        );
+        
+        const paymentData = {
+          id: existingPaymentIndex >= 0 ? allPayments[existingPaymentIndex].id : `maint-${Date.now()}-${apartment.id}`,
+          apartment_id: apartment.id,
+          floor: apartment.floor,
+          apartment_number: apartment.number,
+          location: apartment.location,
+          resident_name: apartment.resident,
+          status: apartment.status,
+          resident_type: apartment.type,
+          payment_type: 'صيانة شهرية',
+          amount: amount,
+          paid: paid,
+          payment_status: paymentStatus,
+          debt: amount - paid,
+          notes: `إيصال صيانة شهرية - ${month} ${year}`,
+          payment_method: paid > 0 ? 'نقدي' : '',
+          month: month,
+          year: year,
+          created_at: existingPaymentIndex >= 0 ? allPayments[existingPaymentIndex].created_at : timestamp,
+          updated_at: timestamp,
+          is_maintenance: true
+        };
+        
+        if (existingPaymentIndex >= 0) {
+          allPayments[existingPaymentIndex] = paymentData;
+        } else {
+          allPayments.push(paymentData);
+        }
+        addedCount++;
+        
+        // If unpaid or partially paid, create maintenance debt automatically
+        if (paymentStatus === 'غير مدفوع' || (paymentStatus === 'دفع جزئي' && paid < amount)) {
+          const debtAmount = paymentStatus === 'غير مدفوع' ? amount : (amount - paid);
+          
+          // Check if debt already exists
+          const existingDebtIndex = allDebts.findIndex(d => 
+            d.apartment_id === apartment.id && 
+            d.month === month && 
+            d.year === year &&
+            d.debt_type === 'مديونية صيانة شهرية'
+          );
+          
+          const debtData = {
+            id: existingDebtIndex >= 0 ? allDebts[existingDebtIndex].id : `maint-debt-${Date.now()}-${apartment.id}`,
+            apartment_id: apartment.id,
+            floor: apartment.floor,
+            apartment_number: apartment.number,
+            location: apartment.location,
+            resident_name: apartment.resident,
+            resident_type: apartment.type,
+            debt_type: 'مديونية صيانة شهرية',
+            description: `صيانة شهرية - ${month} ${year}`,
+            amount: debtAmount,
+            due_date: new Date(year, getMonthNumber(month), 0).toISOString().split('T')[0],
+            month: month,
+            year: year,
+            notes: `مديونية صيانة شهرية تلقائية - ${month} ${year}`,
+            status: 'مستحقة',
+            created_at: existingDebtIndex >= 0 ? allDebts[existingDebtIndex].created_at : timestamp,
+            is_monthly_maintenance_debt: true
+          };
+          
+          if (existingDebtIndex >= 0) {
+            allDebts[existingDebtIndex] = debtData;
+          } else {
+            allDebts.push(debtData);
+            debtCount++;
+          }
+        } else if (paymentStatus === 'مدفوع') {
+          // If paid, remove any existing maintenance debt for this month
+          const existingDebtIndex = allDebts.findIndex(d => 
+            d.apartment_id === apartment.id && 
+            d.month === month && 
+            d.year === year &&
+            d.debt_type === 'مديونية صيانة شهرية'
+          );
+          
+          if (existingDebtIndex >= 0) {
+            allDebts.splice(existingDebtIndex, 1);
+          }
+        }
+      });
+      
+      saveToLocalStorage();
+      applyFilters();
+      updateStatistics();
+      generateNotifications();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'إنشاء إيصالات الصيانة';
+      
+      document.getElementById('monthly-batch-modal').classList.remove('active');
+      
+      let message = `تم إنشاء ${addedCount} إيصال صيانة بنجاح`;
+      if (debtCount > 0) {
+        message += ` وتم تسجيل ${debtCount} مديونية صيانة شهرية`;
+      }
+      showMessage(message, 'success');
+    }
+    
+    // Helper function to get month number
+    function getMonthNumber(monthName) {
+      const months = {
+        'يناير': 0, 'فبراير': 1, 'مارس': 2, 'أبريل': 3,
+        'مايو': 4, 'يونيو': 5, 'يوليو': 6, 'أغسطس': 7,
+        'سبتمبر': 8, 'أكتوبر': 9, 'نوفمبر': 10, 'ديسمبر': 11
+      };
+      return months[monthName] || 0;
+    }
+    
+    // Print Receipts Handler
+    function handlePrintReceipts(e) {
+      e.preventDefault();
+      
+      const month = document.getElementById('receipts-month-input').value;
+      const year = parseInt(document.getElementById('receipts-year-input').value);
+      const type = document.getElementById('receipts-type-input').value;
+      
+      // Filter payments based on month, year, and type
+      let filteredPayments = allPayments.filter(p => p.month === month && p.year === year);
+      
+      if (type === 'paid') {
+        filteredPayments = filteredPayments.filter(p => p.payment_status === 'مدفوع');
+      } else if (type === 'unpaid') {
+        filteredPayments = filteredPayments.filter(p => p.payment_status === 'غير مدفوع');
+      } else if (type === 'partial') {
+        filteredPayments = filteredPayments.filter(p => p.payment_status === 'دفع جزئي');
+      }
+      
+      if (filteredPayments.length === 0) {
+        showMessage('لا توجد إيصالات للطباعة في هذا الشهر', 'error');
+        return;
+      }
+      
+      // Generate receipts HTML
+      const receiptsHTML = generateReceiptsHTML(filteredPayments, month, year);
+      
+      // Open print window
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(receiptsHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+      
+      document.getElementById('print-receipts-modal').classList.remove('active');
+      showMessage(`تم إعداد ${filteredPayments.length} إيصال للطباعة`, 'success');
+    }
+    
+    // Generate Receipts HTML
+    function generateReceiptsHTML(payments, month, year) {
+      let html = `
+        <!DOCTYPE html>
+        <html dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>إيصالات ${month} ${year}</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0;
+              padding: 0;
+            }
+            .receipt {
+              width: 210mm;
+              min-height: 148mm;
+              padding: 20mm;
+              margin: 0 auto 10mm;
+              background: white;
+              border: 2px solid #333;
+              page-break-after: always;
+              position: relative;
+            }
+            .receipt:last-child {
+              page-break-after: auto;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 3px solid #333;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              margin: 0 0 10px 0;
+              color: #333;
+              font-size: 28px;
+            }
+            .header .subtitle {
+              font-size: 18px;
+              color: #666;
+              margin: 5px 0;
+            }
+            .receipt-number {
+              position: absolute;
+              top: 20mm;
+              left: 20mm;
+              background: #333;
+              color: white;
+              padding: 8px 15px;
+              border-radius: 5px;
+              font-weight: bold;
+            }
+            .info-section {
+              margin: 20px 0;
+              background: #f9f9f9;
+              padding: 15px;
+              border-radius: 8px;
+            }
+            .info-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 8px 0;
+              border-bottom: 1px solid #ddd;
+            }
+            .info-row:last-child {
+              border-bottom: none;
+            }
+            .info-label {
+              font-weight: bold;
+              color: #555;
+              min-width: 150px;
+            }
+            .info-value {
+              color: #333;
+              text-align: left;
+            }
+            .payment-details {
+              margin: 20px 0;
+              border: 2px solid #333;
+              border-radius: 8px;
+              overflow: hidden;
+            }
+            .payment-details table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .payment-details th {
+              background: #333;
+              color: white;
+              padding: 12px;
+              text-align: center;
+              font-size: 14px;
+            }
+            .payment-details td {
+              padding: 10px;
+              text-align: center;
+              border-bottom: 1px solid #ddd;
+            }
+            .total-section {
+              margin: 20px 0;
+              background: #333;
+              color: white;
+              padding: 15px;
+              border-radius: 8px;
+              text-align: center;
+            }
+            .total-section .amount {
+              font-size: 32px;
+              font-weight: bold;
+              margin: 10px 0;
+            }
+            .status-badge {
+              display: inline-block;
+              padding: 5px 15px;
+              border-radius: 20px;
+              font-weight: bold;
+              font-size: 14px;
+            }
+            .status-paid {
+              background: #10b981;
+              color: white;
+            }
+            .status-unpaid {
+              background: #ef4444;
+              color: white;
+            }
+            .status-partial {
+              background: #f59e0b;
+              color: white;
+            }
+            .debts-section {
+              margin: 20px 0;
+              background: #fff3cd;
+              border: 2px solid #ffc107;
+              border-radius: 8px;
+              padding: 15px;
+            }
+            .debts-section h3 {
+              margin: 0 0 10px 0;
+              color: #856404;
+            }
+            .debt-item {
+              padding: 8px;
+              background: white;
+              margin: 5px 0;
+              border-radius: 5px;
+              display: flex;
+              justify-content: space-between;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 15px;
+              border-top: 2px solid #333;
+              text-align: center;
+              font-size: 12px;
+              color: #666;
+            }
+            .signature-section {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 40px;
+            }
+            .signature-box {
+              text-align: center;
+              width: 45%;
+            }
+            .signature-line {
+              border-top: 2px solid #333;
+              margin-top: 50px;
+              padding-top: 10px;
+            }
+            @media print {
+              body { margin: 0; }
+              .receipt { 
+                margin: 0;
+                border: none;
+                page-break-after: always;
+              }
+              .receipt:last-child {
+                page-break-after: auto;
+              }
+            }
+          </style>
+        </head>
+        <body>
+      `;
+      
+      payments.forEach((payment, index) => {
+        // Get apartment debts
+        const apartmentDebts = allDebts.filter(d => d.apartment_id === payment.apartment_id);
+        const monthlyDebts = apartmentDebts.filter(d => d.is_monthly_debt);
+        const otherDebts = apartmentDebts.filter(d => !d.is_monthly_debt);
+        
+        const totalMonthlyDebt = monthlyDebts.reduce((sum, d) => sum + d.amount, 0);
+        const totalOtherDebt = otherDebts.reduce((sum, d) => sum + d.amount, 0);
+        
+        const statusClass = payment.payment_status === 'مدفوع' ? 'status-paid' : 
+                           payment.payment_status === 'دفع جزئي' ? 'status-partial' : 'status-unpaid';
+        
+        html += `
+          <div class="receipt">
+            <div class="receipt-number">إيصال رقم: ${payment.id}</div>
+            
+            <div class="header">
+              <h1>🏢 نظام إدارة العقار المتقدم</h1>
+              <div class="subtitle">إيصال دفع - ${month} ${year}</div>
+              <div class="subtitle">التاريخ: ${new Date().toLocaleDateString('ar-EG')}</div>
+            </div>
+            
+            <div class="info-section">
+              <div class="info-row">
+                <span class="info-label">اسم الساكن:</span>
+                <span class="info-value">${payment.resident_name}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">رقم الشقة:</span>
+                <span class="info-value">${payment.apartment_number}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">الدور:</span>
+                <span class="info-value">${payment.floor}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">المكان:</span>
+                <span class="info-value">${payment.location}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">نوع الساكن:</span>
+                <span class="info-value">${payment.resident_type}</span>
+              </div>
+            </div>
+            
+            <div class="payment-details">
+              <table>
+                <thead>
+                  <tr>
+                    <th>نوع الدفعة</th>
+                    <th>المبلغ المطلوب</th>
+                    <th>المبلغ المدفوع</th>
+                    <th>المتبقي</th>
+                    <th>الحالة</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>${payment.payment_type}</td>
+                    <td>${payment.amount.toFixed(2)} جنيه</td>
+                    <td>${payment.paid.toFixed(2)} جنيه</td>
+                    <td>${(payment.amount - payment.paid).toFixed(2)} جنيه</td>
+                    <td><span class="status-badge ${statusClass}">${payment.payment_status}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            ${payment.payment_method ? `
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">طريقة الدفع:</span>
+                  <span class="info-value">${payment.payment_method}</span>
+                </div>
+              </div>
+            ` : ''}
+            
+            ${payment.notes ? `
+              <div class="info-section">
+                <div class="info-row">
+                  <span class="info-label">ملاحظات:</span>
+                  <span class="info-value">${payment.notes}</span>
+                </div>
+              </div>
+            ` : ''}
+            
+            ${monthlyDebts.length > 0 || otherDebts.length > 0 ? `
+              <div class="debts-section">
+                <h3>⚠️ المديونيات المسجلة</h3>
+                ${monthlyDebts.length > 0 ? `
+                  <div style="margin-bottom: 15px;">
+                    <strong style="color: #856404;">مديونيات شهرية:</strong>
+                    ${monthlyDebts.map(debt => `
+                      <div class="debt-item">
+                        <span>${debt.description}</span>
+                        <strong style="color: #dc3545;">${debt.amount.toFixed(2)} جنيه</strong>
+                      </div>
+                    `).join('')}
+                    <div class="debt-item" style="background: #ffc107; font-weight: bold;">
+                      <span>إجمالي المديونيات الشهرية:</span>
+                      <span>${totalMonthlyDebt.toFixed(2)} جنيه</span>
+                    </div>
+                  </div>
+                ` : ''}
+                ${otherDebts.length > 0 ? `
+                  <div>
+                    <strong style="color: #856404;">مديونيات أخرى (صيانة، كهرباء، إلخ):</strong>
+                    ${otherDebts.map(debt => `
+                      <div class="debt-item">
+                        <span>${debt.debt_type}: ${debt.description}</span>
+                        <strong style="color: #dc3545;">${debt.amount.toFixed(2)} جنيه</strong>
+                      </div>
+                    `).join('')}
+                    <div class="debt-item" style="background: #ffc107; font-weight: bold;">
+                      <span>إجمالي المديونيات الأخرى:</span>
+                      <span>${totalOtherDebt.toFixed(2)} جنيه</span>
+                    </div>
+                  </div>
+                ` : ''}
+                <div class="debt-item" style="background: #dc3545; color: white; font-weight: bold; font-size: 16px; margin-top: 10px;">
+                  <span>إجمالي جميع المديونيات:</span>
+                  <span>${(totalMonthlyDebt + totalOtherDebt).toFixed(2)} جنيه</span>
+                </div>
+              </div>
+            ` : ''}
+            
+            <div class="total-section">
+              <div>المبلغ الإجمالي المدفوع</div>
+              <div class="amount">${payment.paid.toFixed(2)} جنيه</div>
+            </div>
+            
+            <div class="signature-section">
+              <div class="signature-box">
+                <div class="signature-line">توقيع المستلم</div>
+              </div>
+              <div class="signature-box">
+                <div class="signature-line">توقيع الساكن</div>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <p>شكراً لالتزامكم بالسداد في الموعد المحدد</p>
+              <p>نظام إدارة العقار المتقدم - جميع الحقوق محفوظة © ${year}</p>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += `
+        </body>
+        </html>
+      `;
+      
+      return html;
+    }
+
+    // All existing form handlers remain the same
+    function handleDebtFormSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('debt-submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري التسجيل...';
+      
+      const apartmentId = document.getElementById('debt-apartment-select').value;
+      const debtType = document.getElementById('debt-type-input').value;
+      const description = document.getElementById('debt-description-input').value;
+      const amount = parseFloat(document.getElementById('debt-amount-input').value);
+      const dueDate = document.getElementById('debt-due-date-input').value;
+      const month = document.getElementById('debt-month-input').value;
+      const year = parseInt(document.getElementById('debt-year-input').value);
+      const notes = document.getElementById('debt-notes-input').value;
+      
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      
+      const debtData = {
+        id: Date.now().toString(),
+        apartment_id: apartmentId,
+        floor: apartment.floor,
+        apartment_number: apartment.number,
+        location: apartment.location,
+        resident_name: apartment.resident,
+        resident_type: apartment.type,
+        debt_type: debtType,
+        description: description,
+        amount: amount,
+        due_date: dueDate,
+        month: month,
+        year: year,
+        notes: notes,
+        status: 'مستحقة',
+        created_at: new Date().toISOString()
+      };
+      
+      allDebts.push(debtData);
+      
+      saveToLocalStorage();
+      applyFilters();
+      updateStatistics();
+      generateNotifications();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'تسجيل المديونية';
+      
+      document.getElementById('debt-modal').classList.remove('active');
+      showMessage('تم تسجيل المديونية بنجاح', 'success');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري الحفظ...';
+      
+      const apartmentId = document.getElementById('apartment-select').value;
+      const paymentType = document.getElementById('payment-type-input').value;
+      const amount = parseFloat(document.getElementById('amount-input').value);
+      const paid = parseFloat(document.getElementById('paid-input').value);
+      const paymentStatus = document.getElementById('payment-status-input').value;
+      const paymentMethod = document.getElementById('payment-method-input').value;
+      const month = document.getElementById('month-input').value;
+      const year = parseInt(document.getElementById('year-input').value);
+      const notes = document.getElementById('notes-input').value;
+      
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      const debt = amount - paid;
+      
+      // Check if payment status changed from unpaid to paid
+      const oldPayment = currentEditingPayment || allPayments.find(p => p.apartment_id === apartmentId);
+      const statusChangedToPaid = oldPayment && 
+                                  oldPayment.payment_status !== 'مدفوع' && 
+                                  paymentStatus === 'مدفوع' &&
+                                  (paymentType === 'صيانة شهرية' || oldPayment.payment_type === 'صيانة شهرية');
+      
+      const paymentData = {
+        id: currentEditingPayment ? currentEditingPayment.id : Date.now().toString(),
+        apartment_id: apartmentId,
+        floor: apartment.floor,
+        apartment_number: apartment.number,
+        location: apartment.location,
+        resident_name: apartment.resident,
+        status: apartment.status,
+        resident_type: apartment.type,
+        payment_type: paymentType,
+        amount: amount,
+        paid: paid,
+        payment_status: paymentStatus,
+        debt: debt,
+        notes: notes,
+        payment_method: paymentMethod,
+        month: month,
+        year: year,
+        created_at: currentEditingPayment ? currentEditingPayment.created_at : new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      if (currentEditingPayment) {
+        const index = allPayments.findIndex(p => p.id === currentEditingPayment.id);
+        allPayments[index] = paymentData;
+      } else {
+        const existingIndex = allPayments.findIndex(p => p.apartment_id === apartmentId);
+        if (existingIndex >= 0) {
+          paymentData.id = allPayments[existingIndex].id;
+          paymentData.created_at = allPayments[existingIndex].created_at;
+          allPayments[existingIndex] = paymentData;
+        } else {
+          allPayments.push(paymentData);
+        }
+      }
+      
+      // If status changed to paid for maintenance, delete related maintenance debt
+      if (statusChangedToPaid) {
+        const debtIndex = allDebts.findIndex(d => 
+          d.apartment_id === apartmentId && 
+          d.month === month && 
+          d.year === year &&
+          d.debt_type === 'مديونية صيانة شهرية'
+        );
+        
+        if (debtIndex >= 0) {
+          allDebts.splice(debtIndex, 1);
+          showMessage('تم حذف مديونية الصيانة الشهرية تلقائياً', 'success');
+        }
+      }
+      
+      saveToLocalStorage();
+      applyFilters();
+      updateStatistics();
+      generateNotifications();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'حفظ';
+      
+      document.getElementById('payment-modal').classList.remove('active');
+      showMessage('تم الحفظ بنجاح', 'success');
+    }
+
+    function handleApartmentFormSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('apt-submit-btn');
+      submitBtn.classList.add('loading');
+      submitBtn.textContent = 'جاري الحفظ...';
+      
+      const floor = document.getElementById('apt-floor-input').value;
+      const number = document.getElementById('apt-number-input').value;
+      const location = document.getElementById('apt-location-input').value;
+      const resident = document.getElementById('apt-resident-input').value;
+      const status = document.getElementById('apt-status-input').value;
+      const type = document.getElementById('apt-type-input').value;
+      
+      if (currentEditingApartment) {
+        const index = referenceApartments.findIndex(a => a.id === currentEditingApartment.id);
+        if (index >= 0) {
+          referenceApartments[index] = {
+            ...referenceApartments[index],
+            floor: floor,
+            number: number,
+            location: location,
+            resident: resident,
+            status: status,
+            type: type
+          };
+          
+          // Update any existing payments with new apartment data
+          const paymentIndex = allPayments.findIndex(p => p.apartment_id === currentEditingApartment.id);
+          if (paymentIndex >= 0) {
+            allPayments[paymentIndex] = {
+              ...allPayments[paymentIndex],
+              floor: floor,
+              apartment_number: number,
+              location: location,
+              resident_name: resident,
+              status: status,
+              resident_type: type,
+              updated_at: new Date().toISOString()
+            };
+          }
+        }
+      }
+      
+      saveToLocalStorage();
+      populateApartmentSelect();
+      populateFloorFilter();
+      applyFilters();
+      updateStatistics();
+      generateNotifications();
+      
+      submitBtn.classList.remove('loading');
+      submitBtn.textContent = 'حفظ التعديلات';
+      
+      document.getElementById('apartment-modal').classList.remove('active');
+      showMessage('تم تحديث بيانات الشقة بنجاح', 'success');
+    }
+
+    // All existing window functions remain the same
+    window.editApartment = function(apartmentId) {
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      if (!apartment) return;
+      
+      currentEditingApartment = apartment;
+      
+      document.getElementById('apt-floor-input').value = apartment.floor;
+      document.getElementById('apt-number-input').value = apartment.number;
+      document.getElementById('apt-location-input').value = apartment.location;
+      document.getElementById('apt-resident-input').value = apartment.resident;
+      document.getElementById('apt-status-input').value = apartment.status;
+      document.getElementById('apt-type-input').value = apartment.type;
+      
+      document.getElementById('apartment-modal').classList.add('active');
+    };
+
+    window.editPayment = function(apartmentId) {
+      const payment = allPayments.find(p => p.apartment_id === apartmentId);
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      
+      currentEditingPayment = payment;
+      document.getElementById('modal-title').textContent = payment ? 'تعديل الدفعة' : 'إضافة دفعة جديدة';
+      
+      document.getElementById('apartment-select').value = apartmentId;
+      document.getElementById('payment-type-input').value = payment?.payment_type || '';
+      document.getElementById('amount-input').value = payment?.amount || '';
+      document.getElementById('paid-input').value = payment?.paid || '';
+      document.getElementById('payment-status-input').value = payment?.payment_status || '';
+      document.getElementById('payment-method-input').value = payment?.payment_method || '';
+      document.getElementById('month-input').value = payment?.month || '';
+      document.getElementById('year-input').value = payment?.year || 2025;
+      document.getElementById('notes-input').value = payment?.notes || '';
+      
+      document.getElementById('payment-modal').classList.add('active');
+    };
+
+    window.viewDebts = function(apartmentId) {
+      const apartment = referenceApartments.find(a => a.id === apartmentId);
+      const apartmentDebts = allDebts.filter(d => d.apartment_id === apartmentId);
+      
+      if (!apartment) return;
+      
+      let debtsHtml = '';
+      if (apartmentDebts.length === 0) {
+        debtsHtml = '<p class="text-gray-500 text-center py-4">لا توجد مديونيات مسجلة لهذه الشقة</p>';
+      } else {
+        debtsHtml = `
+          <div class="space-y-3">
+            ${apartmentDebts.map(debt => `
+              <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div class="flex justify-between items-start mb-2">
+                  <h4 class="font-semibold text-gray-800">${debt.debt_type}</h4>
+                  <span class="text-red-600 font-bold">${debt.amount.toFixed(2)} جنيه</span>
+                </div>
+                <p class="text-gray-600 mb-2">${debt.description}</p>
+                <div class="grid grid-cols-2 gap-2 text-sm text-gray-500">
+                  <div>📅 الاستحقاق: ${new Date(debt.due_date).toLocaleDateString('ar-EG')}</div>
+                  <div>📆 الشهر: ${debt.month} ${debt.year}</div>
+                </div>
+                ${debt.notes ? `<p class="text-sm text-gray-500 mt-2">💬 ${debt.notes}</p>` : ''}
+                <div class="mt-3 flex gap-2">
+                  <button onclick="deleteDebt('${debt.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                    🗑️ حذف
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal active';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <h3 class="text-2xl font-bold text-gray-800 mb-4">📋 مديونيات الشقة ${apartment.number}</h3>
+          <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+            <p><strong>الساكن:</strong> ${apartment.resident}</p>
+            <p><strong>الدور:</strong> ${apartment.floor}</p>
+            <p><strong>المكان:</strong> ${apartment.location}</p>
+          </div>
+          ${debtsHtml}
+          <div class="flex gap-3 mt-6">
+            <button id="close-debts-modal" class="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-400 transition-all">
+              إغلاق
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      document.getElementById('close-debts-modal').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+    };
+
+    window.deleteDebt = function(debtId) {
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'modal active';
+      confirmDiv.innerHTML = `
+        <div class="modal-content text-center">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">تأكيد حذف المديونية</h3>
+          <p class="text-gray-600 mb-6">هل أنت متأكد من حذف هذه المديونية؟</p>
+          <div class="flex gap-3 justify-center">
+            <button id="confirm-delete-debt" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">حذف</button>
+            <button id="cancel-delete-debt" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">إلغاء</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(confirmDiv);
+      
+      document.getElementById('confirm-delete-debt').addEventListener('click', () => {
+        const index = allDebts.findIndex(d => d.id === debtId);
+        if (index >= 0) {
+          allDebts.splice(index, 1);
+          saveToLocalStorage();
+          applyFilters();
+          updateStatistics();
+          generateNotifications();
+          showMessage('تم حذف المديونية بنجاح', 'success');
+          
+          // Close both modals
+          document.body.removeChild(confirmDiv);
+          const debtsModal = document.querySelector('.modal.active');
+          if (debtsModal) {
+            document.body.removeChild(debtsModal);
+          }
+        }
+      });
+      
+      document.getElementById('cancel-delete-debt').addEventListener('click', () => {
+        document.body.removeChild(confirmDiv);
+      });
+    };
+
+    window.deletePayment = function(apartmentId) {
+      const payment = allPayments.find(p => p.apartment_id === apartmentId);
+      if (!payment) return;
+      
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'modal active';
+      confirmDiv.innerHTML = `
+        <div class="modal-content text-center">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">تأكيد الحذف</h3>
+          <p class="text-gray-600 mb-6">هل أنت متأكد من حذف هذه الدفعة؟</p>
+          <div class="flex gap-3 justify-center">
+            <button id="confirm-delete" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">حذف</button>
+            <button id="cancel-delete" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">إلغاء</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(confirmDiv);
+      
+      document.getElementById('confirm-delete').addEventListener('click', () => {
+        const index = allPayments.findIndex(p => p.apartment_id === apartmentId);
+        if (index >= 0) {
+          allPayments.splice(index, 1);
+          saveToLocalStorage();
+          applyFilters();
+          updateStatistics();
+          generateNotifications();
+          showMessage('تم الحذف بنجاح', 'success');
+        }
+        document.body.removeChild(confirmDiv);
+      });
+      
+      document.getElementById('cancel-delete').addEventListener('click', () => {
+        document.body.removeChild(confirmDiv);
+      });
+    };
+
+    function showMessage(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white font-semibold shadow-lg z-50 ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 3000);
+    }
+
+    // Initialize the app when page loads
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99c7fc30e7c2e1cd',t:'MTc2MjgwMzI0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
